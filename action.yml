@@ -5,12 +5,20 @@ inputs:
     description: 'Xcode version to use'
     required: false
     default: 'latest'
+  macos-version:
+    description: 'macOS version to use'
+    required: false
+    default: 'latest'
   project-name:
     description: 'Name of the Xcode project file (without .xcodeproj extension)'
     required: true
   scheme-name:
     description: 'Name of the Xcode scheme to use'
     required: true
+  app-name:
+    description: 'Name of the app (used for artifact naming)'
+    required: false
+    default: '${{ inputs.project-name }}'
   run-lint:
     description: 'Whether to run SwiftLint'
     required: false
@@ -19,13 +27,79 @@ inputs:
     description: 'Whether to run tests'
     required: false
     default: 'true'
+  run-build:
+    description: 'Whether to build the app'
+    required: false
+    default: 'true'
   create-release:
     description: 'Whether to create a GitHub release'
     required: false
     default: 'false'
+  sign-app:
+    description: 'Whether to sign the app'
+    required: false
+    default: 'false'
+  ignore-step-failure:
+    description: 'Whether to continue the pipeline if a step fails'
+    required: false
+    default: 'false'
+  increment-build-version:
+    description: 'Whether to increment the build version'
+    required: false
+    default: 'true'
+  build-version-increment:
+    description: 'Custom build version increment (if not using git commit count)'
+    required: false
+    default: ''
+  custom-version:
+    description: 'Custom version string to set (overrides increment)'
+    required: false
+  remove-quarantine:
+    description: 'Whether to remove quarantine from the built app'
+    required: false
+    default: 'true'
+  comment-on-pr:
+    description: 'Whether to comment on the PR with release info'
+    required: false
+    default: 'false'
+  pr-comment-template:
+    description: 'Template for PR comment'
+    required: false
+    default: 'New build available: {release-url}'
+  create-dmg:
+    description: 'Whether to create a DMG instead of ZIP'
+    required: false
+    default: 'false'
+  dmg-background:
+    description: 'Path to DMG background image'
+    required: false
+    default: ''
+  dmg-window-size:
+    description: 'Size of the DMG window (width x height)'
+    required: false
+    default: '600x400'
+  dmg-icon-size:
+    description: 'Size of icons in the DMG'
+    required: false
+    default: '128'
+  code-signing-identity:
+    description: 'Code signing identity for app signing'
+    required: false
+    default: ''
+  provisioning-profile:
+    description: 'Provisioning profile for app signing'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token for creating releases and commenting on PRs'
+    required: true
 outputs:
   build-number:
     description: 'The build number used for this run'
+  version:
+    description: 'The version string used for this run'
+  artifact-path:
+    description: 'Path to the built artifact (app bundle, ZIP, or DMG)'
 runs:
   using: 'composite'
   steps:
@@ -41,56 +115,85 @@ runs:
 
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
-      run: |
-        brew install swiftlint
-        swiftlint lint --reporter github-actions-logging
+      run: ${{ github.action_path }}/scripts/lint.sh
       shell: bash
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Run tests
       if: inputs.run-tests == 'true'
-      run: |
-        xcodebuild test -project ${{ inputs.project-name }}.xcodeproj -scheme ${{ inputs.scheme-name }} \
-        -destination 'platform=macOS' \
-        CODE_SIGN_IDENTITY="" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO \
-        ONLY_ACTIVE_ARCH=YES
+      run: ${{ github.action_path }}/scripts/test.sh
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
+
+    - name: Increment version
+      if: inputs.increment-build-version == 'true'
+      run: ${{ github.action_path }}/scripts/increment-version.sh
+      shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_INCREMENT_BUILD_VERSION: ${{ inputs.increment-build-version }}
+        INPUT_BUILD_VERSION_INCREMENT: ${{ inputs.build-version-increment }}
+        INPUT_CUSTOM_VERSION: ${{ inputs.custom-version }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Build App
-      run: |
-        BUILD_NUMBER=$(($(git rev-list --count HEAD) + 1000))
-        echo "build-number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-        
-        xcodebuild build -project ${{ inputs.project-name }}.xcodeproj -scheme ${{ inputs.scheme-name }} \
-        -configuration Release \
-        CODE_SIGN_IDENTITY="-" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO \
-        ONLY_ACTIVE_ARCH=NO \
-        ARCHS="x86_64 arm64" \
-        VALID_ARCHS="x86_64 arm64" \
-        LIBRARY_VALIDATION=NO \
-        OTHER_CODE_SIGN_FLAGS="--deep" \
-        GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS REMOVE_QUARANTINE=1' \
-        BUILD_DIR="./build"
+      if: inputs.run-build == 'true'
+      run: ${{ github.action_path }}/scripts/build.sh
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+        INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
+        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
-    - name: Create app bundle
-      run: |
-        mkdir -p artifacts
-        cp -R build/Release/*.app artifacts/
+    - name: Sign App
+      if: inputs.sign-app == 'true'
+      run: ${{ github.action_path }}/scripts/sign.sh
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_CODE_SIGNING_IDENTITY: ${{ inputs.code-signing-identity }}
+        INPUT_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
+
+    - name: Create DMG
+      if: inputs.create-dmg == 'true'
+      run: ${{ github.action_path }}/scripts/create-dmg.sh
+      shell: bash
+      env:
+        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
+        INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
+        INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
+        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Create Release
       if: inputs.create-release == 'true'
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        cd artifacts
-        zip -r ../app-bundle.zip .
-        gh release create v${{ steps.build.outputs.build-number }} \
-          --title "${{ inputs.project-name }}-b-${{ github.run_number }}-v-${{ steps.build.outputs.build-number }}" \
-          --notes "Automated release for ${{ inputs.project-name }} App" \
-          app-bundle.zip
+      run: ${{ github.action_path }}/scripts/release.sh
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
+        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
+        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
+
+    - name: Comment on PR
+      if: inputs.comment-on-pr == 'true'
+      run: ${{ github.action_path }}/scripts/comment-pr.sh
+      shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_ARTIFACT_PATH: ${{ steps.create-release.outputs.artifact-path }}
+        INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_PR_COMMENT_TEMPLATE: ${{ inputs.pr-comment-template }}
+      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
