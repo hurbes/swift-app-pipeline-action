@@ -1,5 +1,9 @@
 name: 'Swift App Pipeline Action'
-description: 'A comprehensive GitHub Action for Swift app development, providing automated linting, testing, building, and releasing for macOS applications.'
+description: 'Automate Swift app development with linting, testing, building, and releasing for macOS. All-in-one CI/CD solution.'
+author: 'Arnab Banerjee'
+branding:
+  icon: 'box'
+  color: 'red'
 inputs:
   xcode-version:
     description: 'Xcode version to use'
