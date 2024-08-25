@@ -1,0 +1,96 @@
+name: 'Swift App Pipeline Action'
+description: 'A comprehensive GitHub Action for Swift app development, providing automated linting, testing, building, and releasing for macOS applications.'
+inputs:
+  xcode-version:
+    description: 'Xcode version to use'
+    required: false
+    default: 'latest'
+  project-name:
+    description: 'Name of the Xcode project file (without .xcodeproj extension)'
+    required: true
+  scheme-name:
+    description: 'Name of the Xcode scheme to use'
+    required: true
+  run-lint:
+    description: 'Whether to run SwiftLint'
+    required: false
+    default: 'true'
+  run-tests:
+    description: 'Whether to run tests'
+    required: false
+    default: 'true'
+  create-release:
+    description: 'Whether to create a GitHub release'
+    required: false
+    default: 'false'
+outputs:
+  build-number:
+    description: 'The build number used for this run'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Run SwiftLint
+      if: inputs.run-lint == 'true'
+      run: |
+        brew install swiftlint
+        swiftlint lint --reporter github-actions-logging
+      shell: bash
+
+    - name: Run tests
+      if: inputs.run-tests == 'true'
+      run: |
+        xcodebuild test -project ${{ inputs.project-name }}.xcodeproj -scheme ${{ inputs.scheme-name }} \
+        -destination 'platform=macOS' \
+        CODE_SIGN_IDENTITY="" \
+        CODE_SIGNING_REQUIRED=NO \
+        CODE_SIGNING_ALLOWED=NO \
+        ONLY_ACTIVE_ARCH=YES
+      shell: bash
+
+    - name: Build App
+      run: |
+        BUILD_NUMBER=$(($(git rev-list --count HEAD) + 1000))
+        echo "build-number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+        
+        xcodebuild build -project ${{ inputs.project-name }}.xcodeproj -scheme ${{ inputs.scheme-name }} \
+        -configuration Release \
+        CODE_SIGN_IDENTITY="-" \
+        CODE_SIGNING_REQUIRED=NO \
+        CODE_SIGNING_ALLOWED=NO \
+        ONLY_ACTIVE_ARCH=NO \
+        ARCHS="x86_64 arm64" \
+        VALID_ARCHS="x86_64 arm64" \
+        LIBRARY_VALIDATION=NO \
+        OTHER_CODE_SIGN_FLAGS="--deep" \
+        GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS REMOVE_QUARANTINE=1' \
+        BUILD_DIR="./build"
+      shell: bash
+
+    - name: Create app bundle
+      run: |
+        mkdir -p artifacts
+        cp -R build/Release/*.app artifacts/
+      shell: bash
+
+    - name: Create Release
+      if: inputs.create-release == 'true'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        cd artifacts
+        zip -r ../app-bundle.zip .
+        gh release create v${{ steps.build.outputs.build-number }} \
+          --title "${{ inputs.project-name }}-b-${{ github.run_number }}-v-${{ steps.build.outputs.build-number }}" \
+          --notes "Automated release for ${{ inputs.project-name }} App" \
+          app-bundle.zip
+      shell: bash
