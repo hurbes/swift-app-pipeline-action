@@ -27,30 +27,37 @@ inputs:
     description: 'Whether to run SwiftLint'
     required: false
     default: 'true'
+    type: boolean
   run-tests:
     description: 'Whether to run tests'
     required: false
     default: 'true'
+    type: boolean
   run-build:
     description: 'Whether to build the app'
     required: false
     default: 'true'
+    type: boolean
   create-release:
     description: 'Whether to create a GitHub release'
     required: false
     default: 'false'
+    type: boolean
   sign-app:
     description: 'Whether to sign the app'
     required: false
     default: 'false'
+    type: boolean
   ignore-step-failure:
     description: 'Whether to continue the pipeline if a step fails'
     required: false
     default: 'false'
+    type: boolean
   increment-build-version:
     description: 'Whether to increment the build version'
     required: false
     default: 'true'
+    type: boolean
   build-version-increment:
     description: 'Custom build version increment (if not using git commit count)'
     required: false
@@ -62,10 +69,12 @@ inputs:
     description: 'Whether to remove quarantine from the built app'
     required: false
     default: 'true'
+    type: boolean
   comment-on-pr:
     description: 'Whether to comment on the PR with release info'
     required: false
     default: 'false'
+    type: boolean
   pr-comment-template:
     description: 'Template for PR comment'
     required: false
@@ -74,6 +83,7 @@ inputs:
     description: 'Whether to create a DMG instead of ZIP'
     required: false
     default: 'false'
+    type: boolean
   dmg-background:
     description: 'Path to DMG background image'
     required: false
@@ -104,7 +114,6 @@ outputs:
     description: 'The version string used for this run'
   artifact-path:
     description: 'Path to the built artifact (app bundle, ZIP, or DMG)'
-    
 runs:
   using: 'composite'
   steps:
@@ -123,8 +132,7 @@ runs:
       run: ${{ github.action_path }}/scripts/lint.sh
       shell: bash
       env:
-        INPUT_RUN_LINT: ${{ inputs.run-lint }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
 
     - name: Run tests
       if: ${{ inputs.run-tests == 'true' }}
@@ -133,19 +141,16 @@ runs:
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
-        INPUT_RUN_TESTS: ${{ inputs.run-tests }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Increment version
       if: ${{ inputs.increment-build-version == 'true' }}
+      id: increment-version
       run: ${{ github.action_path }}/scripts/increment-version.sh
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_INCREMENT_BUILD_VERSION: ${{ inputs.increment-build-version }}
         INPUT_BUILD_VERSION_INCREMENT: ${{ inputs.build-version-increment }}
         INPUT_CUSTOM_VERSION: ${{ inputs.custom-version }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Build App
       if: ${{ inputs.run-build == 'true' }}
@@ -155,9 +160,7 @@ runs:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
-        INPUT_RUN_BUILD: ${{ inputs.run-build }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Sign App
       if: ${{ inputs.sign-app == 'true' }}
@@ -167,8 +170,6 @@ runs:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_CODE_SIGNING_IDENTITY: ${{ inputs.code-signing-identity }}
         INPUT_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
-        INPUT_SIGN_APP: ${{ inputs.sign-app }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Create DMG
       if: ${{ inputs.create-dmg == 'true' }}
@@ -180,9 +181,7 @@ runs:
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
         INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
-        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Create Release
       if: ${{ inputs.create-release == 'true' }}
@@ -193,10 +192,8 @@ runs:
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
-        INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Comment on PR
       if: ${{ inputs.comment-on-pr == 'true' }}
@@ -208,5 +205,3 @@ runs:
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_PR_COMMENT_TEMPLATE: ${{ inputs.pr-comment-template }}
-        INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
-      continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
