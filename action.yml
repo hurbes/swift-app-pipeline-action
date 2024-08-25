@@ -104,6 +104,7 @@ outputs:
     description: 'The version string used for this run'
   artifact-path:
     description: 'Path to the built artifact (app bundle, ZIP, or DMG)'
+    
 runs:
   using: 'composite'
   steps:
@@ -118,22 +119,25 @@ runs:
         xcode-version: ${{ inputs.xcode-version }}
 
     - name: Run SwiftLint
-      if: inputs.run-lint == 'true'
+      if: ${{ inputs.run-lint == 'true' }}
       run: ${{ github.action_path }}/scripts/lint.sh
       shell: bash
+      env:
+        INPUT_RUN_LINT: ${{ inputs.run-lint }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Run tests
-      if: inputs.run-tests == 'true'
+      if: ${{ inputs.run-tests == 'true' }}
       run: ${{ github.action_path }}/scripts/test.sh
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+        INPUT_RUN_TESTS: ${{ inputs.run-tests }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Increment version
-      if: inputs.increment-build-version == 'true'
+      if: ${{ inputs.increment-build-version == 'true' }}
       run: ${{ github.action_path }}/scripts/increment-version.sh
       shell: bash
       env:
@@ -144,28 +148,30 @@ runs:
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Build App
-      if: inputs.run-build == 'true'
+      if: ${{ inputs.run-build == 'true' }}
       run: ${{ github.action_path }}/scripts/build.sh
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
+        INPUT_RUN_BUILD: ${{ inputs.run-build }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Sign App
-      if: inputs.sign-app == 'true'
+      if: ${{ inputs.sign-app == 'true' }}
       run: ${{ github.action_path }}/scripts/sign.sh
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_CODE_SIGNING_IDENTITY: ${{ inputs.code-signing-identity }}
         INPUT_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+        INPUT_SIGN_APP: ${{ inputs.sign-app }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Create DMG
-      if: inputs.create-dmg == 'true'
+      if: ${{ inputs.create-dmg == 'true' }}
       run: ${{ github.action_path }}/scripts/create-dmg.sh
       shell: bash
       env:
@@ -174,11 +180,12 @@ runs:
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
         INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Create Release
-      if: inputs.create-release == 'true'
+      if: ${{ inputs.create-release == 'true' }}
       run: ${{ github.action_path }}/scripts/release.sh
       shell: bash
       env:
@@ -186,12 +193,13 @@ runs:
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
+        INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
 
     - name: Comment on PR
-      if: inputs.comment-on-pr == 'true'
+      if: ${{ inputs.comment-on-pr == 'true' }}
       run: ${{ github.action_path }}/scripts/comment-pr.sh
       shell: bash
       env:
@@ -200,4 +208,5 @@ runs:
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_PR_COMMENT_TEMPLATE: ${{ inputs.pr-comment-template }}
+        INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
       continue-on-error: ${{ inputs.ignore-step-failure == 'true' }}
