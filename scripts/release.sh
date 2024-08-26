@@ -9,7 +9,7 @@ APP_NAME="${INPUT_APP_NAME:-$PROJECT_NAME}"
 CREATE_DMG="${INPUT_CREATE_DMG}"
 DMG_BACKGROUND="${INPUT_DMG_BACKGROUND}"
 BUILD_NUMBER="${BUILD_NUMBER}"
-GITHUB_TOKEN="${INPUT_GITHUB_TOKEN}"
+GITHUB_TOKEN="${GITHUB_TOKEN}"
 
 # Set artifact name and path
 ARTIFACT_NAME="${APP_NAME}-${BUILD_NUMBER}"
@@ -54,33 +54,25 @@ echo "Creating GitHub Release..."
 RELEASE_NOTES="Release ${BUILD_NUMBER} of ${APP_NAME}"
 RELEASE_TAG="v${BUILD_NUMBER}"
 
-# Use GitHub CLI if available, otherwise use curl
-if command -v gh &> /dev/null; then
-    gh release create "${RELEASE_TAG}" \
-        --title "${APP_NAME} ${RELEASE_TAG}" \
-        --notes "${RELEASE_NOTES}" \
-        "${ARTIFACT_PATH}"
-else
-    RELEASE_DATA=$(jq -n \
-        --arg tag "${RELEASE_TAG}" \
-        --arg name "${APP_NAME} ${RELEASE_TAG}" \
-        --arg body "${RELEASE_NOTES}" \
-        '{tag_name: $tag, name: $name, body: $body, draft: false, prerelease: false}')
+RELEASE_DATA=$(jq -n \
+    --arg tag "${RELEASE_TAG}" \
+    --arg name "${APP_NAME} ${RELEASE_TAG}" \
+    --arg body "${RELEASE_NOTES}" \
+    '{tag_name: $tag, name: $name, body: $body, draft: false, prerelease: false}')
 
-    RELEASE_RESPONSE=$(curl -s -X POST \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
-        -d "${RELEASE_DATA}")
+RELEASE_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github.v3+json" \
+    "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
+    -d "${RELEASE_DATA}")
 
-    RELEASE_ID=$(echo "${RELEASE_RESPONSE}" | jq -r .id)
-    UPLOAD_URL=$(echo "${RELEASE_RESPONSE}" | jq -r .upload_url | sed -e "s/{?name,label}//")
+RELEASE_ID=$(echo "${RELEASE_RESPONSE}" | jq -r .id)
+UPLOAD_URL=$(echo "${RELEASE_RESPONSE}" | jq -r .upload_url | sed -e "s/{?name,label}//")
 
-    curl -s -X POST \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        -H "Content-Type: application/octet-stream" \
-        "${UPLOAD_URL}?name=$(basename ${ARTIFACT_PATH})" \
-        --data-binary "@${ARTIFACT_PATH}"
-fi
+curl -s -X POST \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Content-Type: application/octet-stream" \
+    "${UPLOAD_URL}?name=$(basename ${ARTIFACT_PATH})" \
+    --data-binary "@${ARTIFACT_PATH}"
 
 echo "Release created successfully."
