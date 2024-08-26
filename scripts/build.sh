@@ -34,13 +34,22 @@ fi
 # Create app bundle
 echo "Creating app bundle..."
 mkdir -p artifacts
-if [ -d "build/Release/${SCHEME_NAME}.app" ]; then
-    cp -R "build/Release/${SCHEME_NAME}.app" artifacts/
-    echo "App bundle created successfully."
+
+# Check build directory structure
+echo "Build directory contents:"
+ls -R build
+
+# Try to find the .app file
+APP_PATH=$(find build -name "*.app" -print -quit)
+
+if [ -n "$APP_PATH" ]; then
+    echo "Found app bundle at: $APP_PATH"
+    cp -R "$APP_PATH" artifacts/
+    echo "App bundle copied to artifacts directory."
 else
-    echo "Error: App bundle not found at expected location: build/Release/${SCHEME_NAME}.app"
-    echo "Contents of build/Release directory:"
-    ls -la build/Release
+    echo "Error: App bundle not found in the build directory."
+    echo "Contents of build directory:"
+    ls -R build
     exit 1
 fi
 
