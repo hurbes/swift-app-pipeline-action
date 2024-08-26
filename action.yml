@@ -183,18 +183,30 @@ runs:
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
       run: ${{ github.action_path }}/scripts/create-dmg.sh
 
-    - name: Create Release
+    - name: Prepare Release
       if: inputs.create-release == 'true'
+      id: prepare_release
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
-        INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
+        INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: ${{ github.action_path }}/scripts/release.sh
+
+    - name: Create Release
+      if: inputs.create-release == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ steps.prepare_release.outputs.artifact-path }}
+        name: ${{ steps.prepare_release.outputs.release-name }}
+        tag_name: ${{ steps.prepare_release.outputs.release-tag }}
+        body: "Automated release for ${{ inputs.app-name }} App"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
 
     - name: Comment on PR
       if: inputs.comment-on-pr == 'true'

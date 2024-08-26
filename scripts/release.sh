@@ -9,7 +9,6 @@ APP_NAME="${INPUT_APP_NAME:-$PROJECT_NAME}"
 CREATE_DMG="${INPUT_CREATE_DMG}"
 DMG_BACKGROUND="${INPUT_DMG_BACKGROUND}"
 BUILD_NUMBER="${BUILD_NUMBER}"
-GITHUB_TOKEN="${GITHUB_TOKEN}"
 
 # Set artifact name and path
 ARTIFACT_NAME="${APP_NAME}-${BUILD_NUMBER}"
@@ -48,40 +47,7 @@ else
 fi
 
 echo "artifact-path=${ARTIFACT_PATH}" >> $GITHUB_OUTPUT
+echo "release-name=${APP_NAME} v${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+echo "release-tag=v${BUILD_NUMBER}" >> $GITHUB_OUTPUT
 
-# Create GitHub Release
-echo "Creating GitHub Release..."
-RELEASE_NOTES="Release ${BUILD_NUMBER} of ${APP_NAME}"
-RELEASE_TAG="v${BUILD_NUMBER}"
-
-RELEASE_DATA=$(jq -n \
-    --arg tag "${RELEASE_TAG}" \
-    --arg name "${APP_NAME} ${RELEASE_TAG}" \
-    --arg body "${RELEASE_NOTES}" \
-    '{tag_name: $tag, name: $name, body: $body, draft: false, prerelease: false}')
-
-echo "Sending request to GitHub API..."
-echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
-RELEASE_RESPONSE=$(curl -v -s -X POST \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
-    -H "Accept: application/vnd.github.v3+json" \
-    "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
-    -d "${RELEASE_DATA}")
-
-echo "Release API Response:"
-echo "${RELEASE_RESPONSE}"
-
-RELEASE_ID=$(echo "${RELEASE_RESPONSE}" | jq -r .id)
-UPLOAD_URL=$(echo "${RELEASE_RESPONSE}" | jq -r .upload_url | sed -e "s/{?name,label}//")
-
-echo "Uploading artifact..."
-UPLOAD_RESPONSE=$(curl -v -s -X POST \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
-    -H "Content-Type: application/octet-stream" \
-    "${UPLOAD_URL}?name=$(basename ${ARTIFACT_PATH})" \
-    --data-binary "@${ARTIFACT_PATH}")
-
-echo "Upload API Response:"
-echo "${UPLOAD_RESPONSE}"
-
-echo "Release process completed."
+echo "Release preparation completed."
