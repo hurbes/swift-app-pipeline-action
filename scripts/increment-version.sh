@@ -14,8 +14,12 @@ INFO_PLIST_PATH="${PROJECT_NAME}/Info.plist"
 
 # Check if Info.plist exists
 if [ ! -f "${INFO_PLIST_PATH}" ]; then
-    echo "Error: Info.plist not found at ${INFO_PLIST_PATH}"
-    exit 1
+    echo "Info.plist not found. Creating a default one."
+    mkdir -p "$(dirname "${INFO_PLIST_PATH}")"
+    /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.example.${PROJECT_NAME}" "${INFO_PLIST_PATH}"
+    /usr/libexec/PlistBuddy -c "Add :CFBundleName string ${PROJECT_NAME}" "${INFO_PLIST_PATH}"
+    /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "${INFO_PLIST_PATH}"
+    /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" "${INFO_PLIST_PATH}"
 fi
 
 # Function to increment version
