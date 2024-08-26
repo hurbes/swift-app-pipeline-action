@@ -128,80 +128,88 @@ runs:
         xcode-version: ${{ inputs.xcode-version }}
 
     - name: Run SwiftLint
-      if: ${{ inputs.run-lint == 'true' }}
-      run: ${{ github.action_path }}/scripts/lint.sh
+      if: inputs.run-lint == 'true'
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_RUN_LINT: ${{ inputs.run-lint }}
+      run: ${{ github.action_path }}/scripts/lint.sh
 
     - name: Run tests
-      if: ${{ inputs.run-tests == 'true' }}
-      run: ${{ github.action_path }}/scripts/test.sh
+      if: inputs.run-tests == 'true'
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+        INPUT_RUN_TESTS: ${{ inputs.run-tests }}
+      run: ${{ github.action_path }}/scripts/test.sh
 
     - name: Increment version
-      if: ${{ inputs.increment-build-version == 'true' }}
-      id: increment-version
-      run: ${{ github.action_path }}/scripts/increment-version.sh
+      if: inputs.increment-build-version == 'true'
       shell: bash
+      id: increment-version
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_INCREMENT_BUILD_VERSION: ${{ inputs.increment-build-version }}
         INPUT_BUILD_VERSION_INCREMENT: ${{ inputs.build-version-increment }}
         INPUT_CUSTOM_VERSION: ${{ inputs.custom-version }}
+      run: ${{ github.action_path }}/scripts/increment-version.sh
 
     - name: Build App
-      if: ${{ inputs.run-build == 'true' }}
-      run: ${{ github.action_path }}/scripts/build.sh
+      if: inputs.run-build == 'true'
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+        INPUT_RUN_BUILD: ${{ inputs.run-build }}
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+      run: ${{ github.action_path }}/scripts/build.sh
 
     - name: Sign App
-      if: ${{ inputs.sign-app == 'true' }}
-      run: ${{ github.action_path }}/scripts/sign.sh
+      if: inputs.sign-app == 'true'
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SIGN_APP: ${{ inputs.sign-app }}
         INPUT_CODE_SIGNING_IDENTITY: ${{ inputs.code-signing-identity }}
         INPUT_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+      run: ${{ github.action_path }}/scripts/sign.sh
 
     - name: Create DMG
-      if: ${{ inputs.create-dmg == 'true' }}
-      run: ${{ github.action_path }}/scripts/create-dmg.sh
+      if: inputs.create-dmg == 'true'
       shell: bash
       env:
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
         INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+      run: ${{ github.action_path }}/scripts/create-dmg.sh
 
     - name: Create Release
-      if: ${{ inputs.create-release == 'true' }}
-      run: ${{ github.action_path }}/scripts/release.sh
+      if: inputs.create-release == 'true'
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: ${{ github.action_path }}/scripts/release.sh
 
     - name: Comment on PR
-      if: ${{ inputs.comment-on-pr == 'true' }}
-      run: ${{ github.action_path }}/scripts/comment-pr.sh
+      if: inputs.comment-on-pr == 'true'
       shell: bash
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
         INPUT_ARTIFACT_PATH: ${{ steps.create-release.outputs.artifact-path }}
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         INPUT_APP_NAME: ${{ inputs.app-name }}
         INPUT_PR_COMMENT_TEMPLATE: ${{ inputs.pr-comment-template }}
+      run: ${{ github.action_path }}/scripts/comment-pr.sh
