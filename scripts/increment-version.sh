@@ -12,6 +12,8 @@ CUSTOM_VERSION="${INPUT_CUSTOM_VERSION}"
 # Path to Info.plist
 INFO_PLIST_PATH="${PROJECT_NAME}/Info.plist"
 
+echo "Looking for Info.plist at: ${INFO_PLIST_PATH}"
+
 # Check if Info.plist exists
 if [ ! -f "${INFO_PLIST_PATH}" ]; then
     echo "Info.plist not found. Creating a default one."
@@ -20,7 +22,15 @@ if [ ! -f "${INFO_PLIST_PATH}" ]; then
     /usr/libexec/PlistBuddy -c "Add :CFBundleName string ${PROJECT_NAME}" "${INFO_PLIST_PATH}"
     /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "${INFO_PLIST_PATH}"
     /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" "${INFO_PLIST_PATH}"
+    
+    if [ ! -f "${INFO_PLIST_PATH}" ]; then
+        echo "Failed to create Info.plist. Check permissions and path."
+        exit 1
+    fi
 fi
+
+echo "Contents of Info.plist:"
+/usr/libexec/PlistBuddy -c "Print" "${INFO_PLIST_PATH}"
 
 # Function to increment version
 increment_version() {
@@ -31,7 +41,7 @@ increment_version() {
 }
 
 # Get current version
-CURRENT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${INFO_PLIST_PATH}")
+CURRENT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${INFO_PLIST_PATH}" 2>/dev/null || echo "1.0.0")
 echo "Current version: ${CURRENT_VERSION}"
 
 # Determine new version
@@ -60,6 +70,9 @@ BUILD_NUMBER=$(($(git rev-list --count HEAD) + 1000))
 
 echo "Updated CFBundleShortVersionString to ${NEW_VERSION}"
 echo "Updated CFBundleVersion to ${BUILD_NUMBER}"
+
+echo "Final contents of Info.plist:"
+/usr/libexec/PlistBuddy -c "Print" "${INFO_PLIST_PATH}"
 
 # Set output variables
 echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
