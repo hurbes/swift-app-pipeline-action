@@ -16,21 +16,40 @@ echo "Looking for Info.plist at: ${INFO_PLIST_PATH}"
 
 # Check if Info.plist exists
 if [ ! -f "${INFO_PLIST_PATH}" ]; then
-    echo "Info.plist not found. Creating a default one."
+    echo "Info.plist not found. Creating a new one."
     mkdir -p "$(dirname "${INFO_PLIST_PATH}")"
-    /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.example.${PROJECT_NAME}" "${INFO_PLIST_PATH}"
-    /usr/libexec/PlistBuddy -c "Add :CFBundleName string ${PROJECT_NAME}" "${INFO_PLIST_PATH}"
-    /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "${INFO_PLIST_PATH}"
-    /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" "${INFO_PLIST_PATH}"
-    
-    if [ ! -f "${INFO_PLIST_PATH}" ]; then
-        echo "Failed to create Info.plist. Check permissions and path."
-        exit 1
-    fi
+    touch "${INFO_PLIST_PATH}"
 fi
 
+echo "Info.plist file details:"
+ls -l "${INFO_PLIST_PATH}"
+
 echo "Contents of Info.plist:"
-/usr/libexec/PlistBuddy -c "Print" "${INFO_PLIST_PATH}"
+cat "${INFO_PLIST_PATH}"
+
+# Initialize Info.plist if it's empty
+if [ ! -s "${INFO_PLIST_PATH}" ]; then
+    echo "Info.plist is empty. Initializing with default values."
+    cat << EOF > "${INFO_PLIST_PATH}"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.example.${PROJECT_NAME}</string>
+    <key>CFBundleName</key>
+    <string>${PROJECT_NAME}</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+</dict>
+</plist>
+EOF
+fi
+
+echo "Updated contents of Info.plist:"
+cat "${INFO_PLIST_PATH}"
 
 # Function to increment version
 increment_version() {
@@ -62,17 +81,19 @@ else
 fi
 
 # Update CFBundleShortVersionString in Info.plist
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${NEW_VERSION}" "${INFO_PLIST_PATH}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${NEW_VERSION}" "${INFO_PLIST_PATH}" || \
+/usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${NEW_VERSION}" "${INFO_PLIST_PATH}"
 
 # Update CFBundleVersion (build number)
 BUILD_NUMBER=$(($(git rev-list --count HEAD) + 1000))
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER}" "${INFO_PLIST_PATH}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER}" "${INFO_PLIST_PATH}" || \
+/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER}" "${INFO_PLIST_PATH}"
 
 echo "Updated CFBundleShortVersionString to ${NEW_VERSION}"
 echo "Updated CFBundleVersion to ${BUILD_NUMBER}"
 
 echo "Final contents of Info.plist:"
-/usr/libexec/PlistBuddy -c "Print" "${INFO_PLIST_PATH}"
+cat "${INFO_PLIST_PATH}"
 
 # Set output variables
 echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
