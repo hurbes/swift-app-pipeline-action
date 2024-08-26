@@ -106,6 +106,10 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Make scripts executable
+      shell: bash
+      run: chmod +x ${{ github.action_path }}/scripts/*.sh
+
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
