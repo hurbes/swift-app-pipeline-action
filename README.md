@@ -45,16 +45,19 @@ on:
 jobs:
   build-and-release:
     runs-on: macos-latest
+    permissions:
+      contents: write  # This gives permission to create releases
     steps:
     - uses: actions/checkout@v4
-    - uses: your-username/swift-app-pipeline-action@v1
+    - uses: hurbes/swift-app-pipeline-action@v0.0.15
       with:
         project-name: 'MyAwesomeApp'
         scheme-name: 'MyAwesomeApp'
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        create-release: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 ```
 
-3. Replace `your-username` with your actual GitHub username
+3. Replace `MyAwesomeApp` with your actual project and scheme name
 4. Commit, push, and watch the magic happen! ✨
 
 ## 🛠️ Customization
@@ -62,7 +65,7 @@ jobs:
 This action is more customizable than your favorite ice cream sundae. Here are all the toppings you can add:
 
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     # Required inputs
     project-name: 'MyAwesomeApp'
@@ -103,7 +106,7 @@ SwiftLint keeps your code squeaky clean. It'll check your code style, flag poten
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     run-lint: 'true'  # Set to 'false' to skip linting
 ```
@@ -121,7 +124,7 @@ Runs your test suite to catch bugs before they sneak into production. Because no
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     run-tests: 'true'  # Set to 'false' to skip testing
     scheme-name: 'MyAppTests'  # Specify your test scheme
@@ -140,7 +143,7 @@ Automatically bumps your build number, so you don't have to remember to do it ma
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     increment-build-version: 'true'
     build-version-increment: '2'  # Optional: Specify which part of the version to increment
@@ -160,7 +163,7 @@ Compiles your app and gets it ready for testing or release. This is where your c
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     run-build: 'true'
     project-name: 'MyAwesomeApp'
@@ -181,7 +184,7 @@ Signs your app so it can be distributed through the App Store or notarized for d
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     sign-app: 'true'
     code-signing-identity: '${{ secrets.SIGNING_IDENTITY }}'
@@ -201,7 +204,7 @@ Packages your app into a shiny DMG file, perfect for distribution outside the Ap
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     create-dmg: 'true'
     dmg-background: 'path/to/background.png'
@@ -222,7 +225,7 @@ Creates a new GitHub release and attaches your app (as a ZIP or DMG). It's like 
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     create-release: 'true'
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -241,7 +244,7 @@ Leaves a comment on your PR with details about the new build. Keep your team in 
 
 **Usage:**
 ```yaml
-- uses: your-username/swift-app-pipeline-action@v1
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     comment-on-pr: 'true'
     pr-comment-template: 'New build {build-number} is ready! Download: {release-url}'
@@ -272,6 +275,8 @@ Uh-oh, something went wrong? Don't panic! Here are some common issues and how to
 
 - **"Build failed due to code signing"**: If you're not distributing your app, try setting `CODE_SIGNING_REQUIRED=NO` in your build step.
 
+- **"Permission denied when creating release"**: Ensure you've set the `permissions: contents: write` in your job configuration.
+
 Still stuck? Feel free to open an issue. We're here to help! 🤗
 
 ## 🙏 Credits
@@ -280,10 +285,7 @@ This action stands on the shoulders of giants. We'd like to give a shout-out to 
 
 - [actions/checkout@v4](https://github.com/actions/checkout) - Checks-out your repository so our action can access it.
 - [maxim-lobanov/setup-xcode@v1](https://github.com/maxim-lobanov/setup-xcode) - Sets up our Xcode environment.
-- [actions/upload-artifact@v3](https://github.com/actions/upload-artifact) - Uploads our built app as an artifact.
-- [actions/download-artifact@v3](https://github.com/actions/download-artifact) - Downloads our app artifact for release.
 - [softprops/action-gh-release@v1](https://github.com/softprops/action-gh-release) - Creates GitHub releases for our app.
-- [actions/github-script@v6](https://github.com/actions/github-script) - Allows us to use GitHub's API to comment on PRs.
 
 We're incredibly grateful to the maintainers and contributors of these actions. They've significantly simplified our workflow and allowed us to focus on building a great pipeline for Swift apps.
 
