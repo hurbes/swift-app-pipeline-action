@@ -22,42 +22,34 @@ inputs:
   app-name:
     description: 'Name of the app (used for artifact naming)'
     required: false
-    default: '${{ inputs.project-name }}'
   run-lint:
     description: 'Whether to run SwiftLint'
     required: false
     default: 'true'
-    type: boolean
   run-tests:
     description: 'Whether to run tests'
     required: false
     default: 'true'
-    type: boolean
   run-build:
     description: 'Whether to build the app'
     required: false
     default: 'true'
-    type: boolean
   create-release:
     description: 'Whether to create a GitHub release'
     required: false
     default: 'false'
-    type: boolean
   sign-app:
     description: 'Whether to sign the app'
     required: false
     default: 'false'
-    type: boolean
   ignore-step-failure:
     description: 'Whether to continue the pipeline if a step fails'
     required: false
     default: 'false'
-    type: boolean
   increment-build-version:
     description: 'Whether to increment the build version'
     required: false
     default: 'true'
-    type: boolean
   build-version-increment:
     description: 'Custom build version increment (if not using git commit count)'
     required: false
@@ -69,12 +61,10 @@ inputs:
     description: 'Whether to remove quarantine from the built app'
     required: false
     default: 'true'
-    type: boolean
   comment-on-pr:
     description: 'Whether to comment on the PR with release info'
     required: false
     default: 'false'
-    type: boolean
   pr-comment-template:
     description: 'Template for PR comment'
     required: false
@@ -83,7 +73,6 @@ inputs:
     description: 'Whether to create a DMG instead of ZIP'
     required: false
     default: 'false'
-    type: boolean
   dmg-background:
     description: 'Path to DMG background image'
     required: false
@@ -163,6 +152,7 @@ runs:
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
         INPUT_RUN_BUILD: ${{ inputs.run-build }}
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
+        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
       run: ${{ github.action_path }}/scripts/build.sh
 
@@ -180,7 +170,7 @@ runs:
       if: inputs.create-dmg == 'true'
       shell: bash
       env:
-        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
@@ -194,7 +184,7 @@ runs:
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
@@ -210,6 +200,6 @@ runs:
         INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
         INPUT_ARTIFACT_PATH: ${{ steps.create-release.outputs.artifact-path }}
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_PR_COMMENT_TEMPLATE: ${{ inputs.pr-comment-template }}
       run: ${{ github.action_path }}/scripts/comment-pr.sh
