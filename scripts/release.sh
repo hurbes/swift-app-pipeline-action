@@ -60,19 +60,28 @@ RELEASE_DATA=$(jq -n \
     --arg body "${RELEASE_NOTES}" \
     '{tag_name: $tag, name: $name, body: $body, draft: false, prerelease: false}')
 
-RELEASE_RESPONSE=$(curl -s -X POST \
+echo "Sending request to GitHub API..."
+echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+RELEASE_RESPONSE=$(curl -v -s -X POST \
     -H "Authorization: token ${GITHUB_TOKEN}" \
     -H "Accept: application/vnd.github.v3+json" \
     "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
     -d "${RELEASE_DATA}")
 
+echo "Release API Response:"
+echo "${RELEASE_RESPONSE}"
+
 RELEASE_ID=$(echo "${RELEASE_RESPONSE}" | jq -r .id)
 UPLOAD_URL=$(echo "${RELEASE_RESPONSE}" | jq -r .upload_url | sed -e "s/{?name,label}//")
 
-curl -s -X POST \
+echo "Uploading artifact..."
+UPLOAD_RESPONSE=$(curl -v -s -X POST \
     -H "Authorization: token ${GITHUB_TOKEN}" \
     -H "Content-Type: application/octet-stream" \
     "${UPLOAD_URL}?name=$(basename ${ARTIFACT_PATH})" \
-    --data-binary "@${ARTIFACT_PATH}"
+    --data-binary "@${ARTIFACT_PATH}")
 
-echo "Release created successfully."
+echo "Upload API Response:"
+echo "${UPLOAD_RESPONSE}"
+
+echo "Release process completed."
