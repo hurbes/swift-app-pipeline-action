@@ -5,6 +5,9 @@ branding:
   icon: 'box'
   color: 'red'
 inputs:
+  provisioning-profile-specifier:
+    description: 'Name of the provisioning profile to use'
+    required: false
   team-id:
     description: 'Apple Developer Team ID'
     required: false

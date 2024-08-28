@@ -18,7 +18,7 @@ fi
 
 # Sign the app
 echo "Signing app bundle"
-codesign --force --options runtime --sign - "${APP_PATH}"
+codesign --force --options runtime --sign "Apple Distribution" --entitlements "${ENTITLEMENTS_PATH}" "${APP_PATH}"
 
 # Verify the signature
 echo "Verifying signature..."
