@@ -191,6 +191,13 @@ runs:
         DEVELOPER_DIR: ${{ env.XCODE_PATH }}
       run: ${{ github.action_path }}/scripts/build.sh
 
+    - name: Sign App
+      if: inputs.sign-app == 'true'
+      shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
+      run: ${{ github.action_path }}/scripts/sign.sh
       
     - name: Create DMG
       if: inputs.create-dmg == 'true'
