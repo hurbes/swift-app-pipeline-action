@@ -145,6 +145,9 @@ runs:
         echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode --output $PP_PATH
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        echo "Provisioning profile installed at: $PP_PATH"
+        echo "Listing installed profiles:"
+        ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
