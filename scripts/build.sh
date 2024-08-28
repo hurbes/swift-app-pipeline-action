@@ -7,11 +7,19 @@ echo "Building app..."
 PROJECT_NAME="${INPUT_PROJECT_NAME}"
 SCHEME_NAME="${INPUT_SCHEME_NAME}"
 REMOVE_QUARANTINE="${INPUT_REMOVE_QUARANTINE}"
+SIGN_APP="${INPUT_SIGN_APP}"
 
 # Build flags
-BUILD_FLAGS="CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
-BUILD_FLAGS="${BUILD_FLAGS} ONLY_ACTIVE_ARCH=NO"
+BUILD_FLAGS="ONLY_ACTIVE_ARCH=NO"
 BUILD_FLAGS="${BUILD_FLAGS} LIBRARY_VALIDATION=NO OTHER_CODE_SIGN_FLAGS=--deep"
+
+if [ "${SIGN_APP}" = "true" ]; then
+    echo "Code signing enabled for build"
+    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_STYLE=Manual"
+else
+    echo "Code signing disabled for build"
+    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+fi
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
@@ -46,6 +54,15 @@ if [ -n "$APP_PATH" ]; then
     echo "Found app bundle at: $APP_PATH"
     cp -R "$APP_PATH" artifacts/
     echo "App bundle copied to artifacts directory."
+
+    # Sign the app if signing is enabled
+    if [ "${SIGN_APP}" = "true" ]; then
+        echo "Signing app bundle..."
+        codesign --force --options runtime --sign - "artifacts/$(basename "$APP_PATH")"
+        
+        echo "Verifying signature..."
+        codesign --verify --verbose "artifacts/$(basename "$APP_PATH")"
+    fi
 else
     echo "Error: App bundle not found in the build directory."
     echo "Contents of build directory:"

@@ -42,6 +42,18 @@ inputs:
     description: 'Whether to sign the app'
     required: false
     default: 'false'
+  keychain-password:
+    description: 'Password for the keychain'
+    required: false
+  p12-base64:
+    description: 'Base64-encoded P12 file with certificates'
+    required: false
+  p12-password:
+    description: 'Password for the P12 file'
+    required: false
+  provisioning-profile-base64:
+    description: 'Base64-encoded provisioning profile'
+    required: false
   ignore-step-failure:
     description: 'Whether to continue the pipeline if a step fails'
     required: false
@@ -85,14 +97,6 @@ inputs:
     description: 'Size of icons in the DMG'
     required: false
     default: '128'
-  code-signing-identity:
-    description: 'Code signing identity for app signing'
-    required: false
-    default: ''
-  provisioning-profile:
-    description: 'Provisioning profile for app signing'
-    required: false
-    default: ''
   github-token:
     description: 'GitHub token for creating releases and commenting on PRs'
     required: true
@@ -119,6 +123,25 @@ runs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Import Code-Signing Certificates
+      if: inputs.sign-app == 'true'
+      uses: apple-actions/import-codesigning-certs@v2
+      with:
+        p12-file-base64: ${{ inputs.p12-base64 }}
+        p12-password: ${{ inputs.p12-password }}
+        keychain-password: ${{ inputs.keychain-password }}
+
+    - name: Install Provisioning Profile
+      if: inputs.sign-app == 'true'
+      shell: bash
+      env:
+        PROVISIONING_PROFILE_BASE64: ${{ inputs.provisioning-profile-base64 }}
+      run: |
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode --output $PP_PATH
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
 
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
@@ -157,18 +180,9 @@ runs:
         INPUT_RUN_BUILD: ${{ inputs.run-build }}
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
+        INPUT_SIGN_APP: ${{ inputs.sign-app }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
       run: ${{ github.action_path }}/scripts/build.sh
-
-    - name: Sign App
-      if: inputs.sign-app == 'true'
-      shell: bash
-      env:
-        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_SIGN_APP: ${{ inputs.sign-app }}
-        INPUT_CODE_SIGNING_IDENTITY: ${{ inputs.code-signing-identity }}
-        INPUT_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
-      run: ${{ github.action_path }}/scripts/sign.sh
 
     - name: Create DMG
       if: inputs.create-dmg == 'true'
