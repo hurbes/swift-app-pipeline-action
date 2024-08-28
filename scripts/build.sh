@@ -25,7 +25,8 @@ if [ -z "$PROVISIONING_PROFILE" ]; then
     echo "Error: No provisioning profile found"
     exit 1
 fi
-echo "Using provisioning profile: $PROVISIONING_PROFILE"
+PROFILE_NAME=$(basename "$PROVISIONING_PROFILE" .mobileprovision)
+echo "Using provisioning profile: $PROFILE_NAME"
 
 # Build flags
 BUILD_FLAGS=()
@@ -42,7 +43,7 @@ if [ "${SIGN_APP}" = "true" ]; then
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Mac App Distribution")
-    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="$(basename "$PROVISIONING_PROFILE" .mobileprovision)")
+    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROFILE_NAME}")
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
