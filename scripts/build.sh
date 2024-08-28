@@ -9,6 +9,7 @@ SCHEME_NAME="${INPUT_SCHEME_NAME}"
 REMOVE_QUARANTINE="${INPUT_REMOVE_QUARANTINE}"
 SIGN_APP="${INPUT_SIGN_APP}"
 TEAM_ID="${INPUT_TEAM_ID}"
+PROVISIONING_PROFILE_SPECIFIER="${INPUT_PROVISIONING_PROFILE_SPECIFIER}"
 
 # Print Xcode path and version
 echo "Xcode path: $DEVELOPER_DIR"
@@ -18,10 +19,6 @@ xcodebuild -version
 # List available schemes
 echo "Available schemes:"
 xcodebuild -list -project "${PROJECT_NAME}.xcodeproj"
-
-# Debug: List installed provisioning profiles
-echo "Installed provisioning profiles:"
-ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 
 # Build flags
 BUILD_FLAGS=()
@@ -38,7 +35,11 @@ if [ "${SIGN_APP}" = "true" ]; then
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Apple Distribution")
-    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="*")
+    if [ -n "${PROVISIONING_PROFILE_SPECIFIER}" ]; then
+        BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROVISIONING_PROFILE_SPECIFIER}")
+    else
+        BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="*")
+    fi
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)

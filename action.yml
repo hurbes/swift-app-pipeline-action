@@ -197,6 +197,7 @@ runs:
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_SIGN_APP: ${{ inputs.sign-app }}
         INPUT_TEAM_ID: ${{ inputs.team-id }}
+        INPUT_PROVISIONING_PROFILE_SPECIFIER: ${{ inputs.provisioning-profile-specifier }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         DEVELOPER_DIR: ${{ env.XCODE_PATH }}
       run: ${{ github.action_path }}/scripts/build.sh
