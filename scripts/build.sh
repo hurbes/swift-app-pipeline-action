@@ -20,32 +20,37 @@ echo "Available schemes:"
 xcodebuild -list -project "${PROJECT_NAME}.xcodeproj"
 
 # Build flags
-BUILD_FLAGS="ONLY_ACTIVE_ARCH=NO"
-BUILD_FLAGS="${BUILD_FLAGS} LIBRARY_VALIDATION=NO OTHER_CODE_SIGN_FLAGS=--deep"
+BUILD_FLAGS=()
+BUILD_FLAGS+=(-project "${PROJECT_NAME}.xcodeproj")
+BUILD_FLAGS+=(-scheme "${SCHEME_NAME}")
+BUILD_FLAGS+=(-configuration Release)
+BUILD_FLAGS+=(-derivedDataPath "./build")
+BUILD_FLAGS+=(ONLY_ACTIVE_ARCH=NO)
+BUILD_FLAGS+=(LIBRARY_VALIDATION=NO)
+BUILD_FLAGS+=(OTHER_CODE_SIGN_FLAGS=--deep)
 
 if [ "${SIGN_APP}" = "true" ]; then
     echo "Code signing enabled for build"
-    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_STYLE=Manual"
-    BUILD_FLAGS="${BUILD_FLAGS} DEVELOPMENT_TEAM=${TEAM_ID}"
-    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_IDENTITY=Mac App Distribution"
-    BUILD_FLAGS="${BUILD_FLAGS} PROVISIONING_PROFILE_SPECIFIER=closer_app_store"
+    BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
+    BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
+    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Mac App Distribution")
+    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER=closer_app_store)
 else
     echo "Code signing disabled for build"
-    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+    BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
+    BUILD_FLAGS+=(CODE_SIGNING_REQUIRED=NO)
+    BUILD_FLAGS+=(CODE_SIGNING_ALLOWED=NO)
 fi
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
-    BUILD_FLAGS="${BUILD_FLAGS} GCC_PREPROCESSOR_DEFINITIONS=REMOVE_QUARANTINE=1"
+    BUILD_FLAGS+=(GCC_PREPROCESSOR_DEFINITIONS="REMOVE_QUARANTINE=1")
 fi
 
 # Build app
 echo "Running xcodebuild..."
 set -x  # Enable command echoing
-xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "${SCHEME_NAME}" \
-    -configuration Release \
-    ${BUILD_FLAGS} \
-    BUILD_DIR="./build" | tee xcodebuild.log
+xcodebuild build "${BUILD_FLAGS[@]}" | tee xcodebuild.log
 set +x  # Disable command echoing
 
 # Check if build was successful
