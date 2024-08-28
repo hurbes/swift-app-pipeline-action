@@ -19,6 +19,14 @@ xcodebuild -version
 echo "Available schemes:"
 xcodebuild -list -project "${PROJECT_NAME}.xcodeproj"
 
+# Find provisioning profile
+PROVISIONING_PROFILE=$(find ~/Library/MobileDevice/Provisioning\ Profiles -name "*.mobileprovision" -print -quit)
+if [ -z "$PROVISIONING_PROFILE" ]; then
+    echo "Error: No provisioning profile found"
+    exit 1
+fi
+echo "Using provisioning profile: $PROVISIONING_PROFILE"
+
 # Build flags
 BUILD_FLAGS=()
 BUILD_FLAGS+=(-project "${PROJECT_NAME}.xcodeproj")
@@ -34,7 +42,7 @@ if [ "${SIGN_APP}" = "true" ]; then
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Mac App Distribution")
-    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER=closer_app_store)
+    BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="$(basename "$PROVISIONING_PROFILE" .mobileprovision)")
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
