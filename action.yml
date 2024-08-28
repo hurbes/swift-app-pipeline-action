@@ -182,6 +182,7 @@ runs:
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_SIGN_APP: ${{ inputs.sign-app }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+        DEVELOPER_DIR: /Applications/Xcode_${{ inputs.xcode-version }}.app/Contents/Developer
       run: ${{ github.action_path }}/scripts/build.sh
 
     - name: Create DMG

@@ -9,6 +9,14 @@ SCHEME_NAME="${INPUT_SCHEME_NAME}"
 REMOVE_QUARANTINE="${INPUT_REMOVE_QUARANTINE}"
 SIGN_APP="${INPUT_SIGN_APP}"
 
+# Print Xcode version
+echo "Xcode version:"
+xcodebuild -version
+
+# List available schemes
+echo "Available schemes:"
+xcodebuild -list -project "${PROJECT_NAME}.xcodeproj"
+
 # Build flags
 BUILD_FLAGS="ONLY_ACTIVE_ARCH=NO"
 BUILD_FLAGS="${BUILD_FLAGS} LIBRARY_VALIDATION=NO OTHER_CODE_SIGN_FLAGS=--deep"
@@ -28,14 +36,21 @@ fi
 
 # Build app
 echo "Running xcodebuild..."
+set -x  # Enable command echoing
 xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "${SCHEME_NAME}" \
     -configuration Release \
     ${BUILD_FLAGS} \
     BUILD_DIR="./build" | xcpretty --color --simple
+set +x  # Disable command echoing
 
 # Check if build was successful
 if [ $? -ne 0 ]; then
     echo "Build failed."
+    echo "xcodebuild output:"
+    xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "${SCHEME_NAME}" \
+        -configuration Release \
+        ${BUILD_FLAGS} \
+        BUILD_DIR="./build"
     exit 1
 fi
 
