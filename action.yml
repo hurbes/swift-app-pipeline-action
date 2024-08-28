@@ -151,6 +151,8 @@ runs:
         echo "Provisioning profile installed at: $PP_PATH"
         echo "Listing installed profiles:"
         ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
+        echo "Profile contents:"
+        security cms -D -i $PP_PATH
 
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
