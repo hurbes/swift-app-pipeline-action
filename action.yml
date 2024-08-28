@@ -171,6 +171,12 @@ runs:
         INPUT_CUSTOM_VERSION: ${{ inputs.custom-version }}
       run: ${{ github.action_path }}/scripts/increment-version.sh
 
+    - name: Set Xcode Path
+      run: |
+        XCODE_PATH=$(dirname $(dirname $(xcode-select -p)))
+        echo "XCODE_PATH=$XCODE_PATH" >> $GITHUB_ENV
+      shell: bash
+
     - name: Build App
       if: inputs.run-build == 'true'
       shell: bash
@@ -182,9 +188,10 @@ runs:
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_SIGN_APP: ${{ inputs.sign-app }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-        DEVELOPER_DIR: /Applications/Xcode_${{ inputs.xcode-version }}.app/Contents/Developer
+        DEVELOPER_DIR: ${{ env.XCODE_PATH }}
       run: ${{ github.action_path }}/scripts/build.sh
 
+      
     - name: Create DMG
       if: inputs.create-dmg == 'true'
       shell: bash

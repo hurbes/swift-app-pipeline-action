@@ -3,6 +3,12 @@ set -e
 
 echo "Building app..."
 
+# Print Xcode path and version
+echo "Xcode path: $DEVELOPER_DIR"
+echo "Xcode version:"
+xcodebuild -version
+
+
 # Get input variables
 PROJECT_NAME="${INPUT_PROJECT_NAME}"
 SCHEME_NAME="${INPUT_SCHEME_NAME}"
