@@ -3,19 +3,14 @@ set -e
 
 echo "Building app..."
 
-# Print Xcode path and version
-echo "Xcode path: $DEVELOPER_DIR"
-echo "Xcode version:"
-xcodebuild -version
-
-
 # Get input variables
 PROJECT_NAME="${INPUT_PROJECT_NAME}"
 SCHEME_NAME="${INPUT_SCHEME_NAME}"
 REMOVE_QUARANTINE="${INPUT_REMOVE_QUARANTINE}"
 SIGN_APP="${INPUT_SIGN_APP}"
 
-# Print Xcode version
+# Print Xcode path and version
+echo "Xcode path: $DEVELOPER_DIR"
 echo "Xcode version:"
 xcodebuild -version
 
@@ -46,17 +41,15 @@ set -x  # Enable command echoing
 xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "${SCHEME_NAME}" \
     -configuration Release \
     ${BUILD_FLAGS} \
-    BUILD_DIR="./build" | xcpretty --color --simple
+    BUILD_DIR="./build" | tee xcodebuild.log
 set +x  # Disable command echoing
 
 # Check if build was successful
-if [ $? -ne 0 ]; then
-    echo "Build failed."
-    echo "xcodebuild output:"
-    xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "${SCHEME_NAME}" \
-        -configuration Release \
-        ${BUILD_FLAGS} \
-        BUILD_DIR="./build"
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo "Build failed. Full xcodebuild log:"
+    cat xcodebuild.log
+    echo "Last 50 lines of xcodebuild log:"
+    tail -n 50 xcodebuild.log
     exit 1
 fi
 
@@ -75,15 +68,6 @@ if [ -n "$APP_PATH" ]; then
     echo "Found app bundle at: $APP_PATH"
     cp -R "$APP_PATH" artifacts/
     echo "App bundle copied to artifacts directory."
-
-    # Sign the app if signing is enabled
-    if [ "${SIGN_APP}" = "true" ]; then
-        echo "Signing app bundle..."
-        codesign --force --options runtime --sign - "artifacts/$(basename "$APP_PATH")"
-        
-        echo "Verifying signature..."
-        codesign --verify --verbose "artifacts/$(basename "$APP_PATH")"
-    fi
 else
     echo "Error: App bundle not found in the build directory."
     echo "Contents of build directory:"
