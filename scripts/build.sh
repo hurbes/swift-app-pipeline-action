@@ -27,7 +27,7 @@ if [ "${SIGN_APP}" = "true" ]; then
     echo "Code signing enabled for build"
     BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_STYLE=Manual"
     BUILD_FLAGS="${BUILD_FLAGS} DEVELOPMENT_TEAM=${TEAM_ID}"
-    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_IDENTITY='Apple Distribution'"
+    BUILD_FLAGS="${BUILD_FLAGS} CODE_SIGN_IDENTITY=Mac App Distribution"
     BUILD_FLAGS="${BUILD_FLAGS} PROVISIONING_PROFILE_SPECIFIER=closer_app_store"
 else
     echo "Code signing disabled for build"
@@ -36,7 +36,7 @@ fi
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
-    BUILD_FLAGS="${BUILD_FLAGS} GCC_PREPROCESSOR_DEFINITIONS='${GCC_PREPROCESSOR_DEFINITIONS} REMOVE_QUARANTINE=1'"
+    BUILD_FLAGS="${BUILD_FLAGS} GCC_PREPROCESSOR_DEFINITIONS=REMOVE_QUARANTINE=1"
 fi
 
 # Build app
