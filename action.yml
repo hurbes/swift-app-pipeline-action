@@ -5,6 +5,9 @@ branding:
   icon: 'box'
   color: 'red'
 inputs:
+  team-id:
+    description: 'Apple Developer Team ID'
+    required: false
   xcode-version:
     description: 'Xcode version to use'
     required: false
@@ -187,6 +190,7 @@ runs:
         INPUT_REMOVE_QUARANTINE: ${{ inputs.remove-quarantine }}
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
         INPUT_SIGN_APP: ${{ inputs.sign-app }}
+        INPUT_TEAM_ID: ${{ inputs.team-id }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         DEVELOPER_DIR: ${{ env.XCODE_PATH }}
       run: ${{ github.action_path }}/scripts/build.sh
