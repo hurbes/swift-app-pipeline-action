@@ -49,7 +49,7 @@ if [ "${SIGN_APP}" = "true" ]; then
     echo "Code signing enabled for build"
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Automatic)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
-    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Apple Development")
+    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Mac Development")
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
