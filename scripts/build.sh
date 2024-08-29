@@ -34,7 +34,7 @@ if [ "${SIGN_APP}" = "true" ]; then
     echo "Code signing enabled for build"
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
-    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Apple Distribution")
+    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="Mac App Distribution")
     if [ -n "${PROVISIONING_PROFILE_SPECIFIER}" ]; then
         BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROVISIONING_PROFILE_SPECIFIER}")
     else
