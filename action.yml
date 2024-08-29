@@ -155,14 +155,17 @@ runs:
         security cms -D -i $PP_PATH
 
     - name: Verify Certificate
+      shell: bash
       run: |
         security find-identity -v -p codesigning
 
     - name: Examine Provisioning Profile
+      shell: bash
       run: |
         security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
 
     - name: Examine Xcode Project
+      shell: bash
       run: |
         xcodebuild -project Closer.xcodeproj -scheme closer -showBuildSettings
         
