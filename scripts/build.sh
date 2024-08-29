@@ -11,6 +11,7 @@ SIGN_APP="${INPUT_SIGN_APP}"
 TEAM_ID="${INPUT_TEAM_ID}"
 PROVISIONING_PROFILE_SPECIFIER="${INPUT_PROVISIONING_PROFILE_SPECIFIER}"
 
+
 # Print Xcode path and version
 echo "Xcode path: $DEVELOPER_DIR"
 echo "Xcode version:"
@@ -46,6 +47,9 @@ else
     BUILD_FLAGS+=(CODE_SIGNING_REQUIRED=NO)
     BUILD_FLAGS+=(CODE_SIGNING_ALLOWED=NO)
 fi
+
+security find-identity -v -p codesigning
+ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
