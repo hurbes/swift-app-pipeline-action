@@ -7,7 +7,8 @@ Hey there, fellow Swift developer! 👋 Tired of setting up the same old CI/CD p
 - [Getting Started](#-getting-started)
 - [Customization](#️-customization)
 - [The Nitty-Gritty Details](#-the-nitty-gritty-details)
-- [Troubleshooting](#-troubleshooting)
+- [Apple Developer Certificates and Provisioning Profiles](#-apple-developer-certificates-and-provisioning-profiles)
+- [Debugging and Troubleshooting](#-debugging-and-troubleshooting)
 - [Credits](#-credits)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -71,7 +72,7 @@ This action is more customizable than your favorite ice cream sundae. Here are a
     project-name: 'MyAwesomeApp'
     scheme-name: 'MyAwesomeApp'
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    
+
     # Optional inputs (showing default values)
     xcode-version: 'latest'
     macos-version: 'latest'
@@ -94,6 +95,7 @@ This action is more customizable than your favorite ice cream sundae. Here are a
     dmg-icon-size: '128'
     code-signing-identity: ''
     provisioning-profile: ''
+    team-id: ''
 ```
 
 ## 🧠 The Nitty-Gritty Details
@@ -187,8 +189,7 @@ Signs your app so it can be distributed through the App Store or notarized for d
 - uses: hurbes/swift-app-pipeline-action@v0.0.15
   with:
     sign-app: 'true'
-    code-signing-identity: '${{ secrets.SIGNING_IDENTITY }}'
-    provisioning-profile: '${{ secrets.PROVISIONING_PROFILE }}'
+    team-id: '${{ secrets.TEAM_ID }}'
 ```
 
 **What it does:**
@@ -196,7 +197,7 @@ Signs your app so it can be distributed through the App Store or notarized for d
 - Embeds the provisioning profile into the app bundle
 - Verifies the signature after signing
 
-**Pro tip:** Store your signing identity and provisioning profile as secrets in your GitHub repo for security!
+**Pro tip:** Store your team ID as a secret in your GitHub repo for security!
 
 ### 6. DMG Creation 📀
 
@@ -259,23 +260,118 @@ Leaves a comment on your PR with details about the new build. Keep your team in 
 
 Remember, you can mix and match these steps however you like. Use only what you need, and customize to your heart's content. That's the beauty of this pipeline - it's as flexible as you need it to be! 🚀
 
-## 🚑 Troubleshooting
+## 🍎 Apple Developer Certificates and Provisioning Profiles
 
-Uh-oh, something went wrong? Don't panic! Here are some common issues and how to fix them:
+To sign and distribute your macOS app, you'll need an Apple Developer account and the necessary certificates and provisioning profiles. Here's a step-by-step guide to set these up:
 
-- **"Xcode version not found"**: Make sure you're specifying a valid Xcode version. Check available versions in the GitHub Actions macOS environments.
+1. **Enroll in the Apple Developer Program**: If you haven't already, enroll in the [Apple Developer Program](https://developer.apple.com/programs/). This is required for code signing and distribution.
 
-- **"Code signing failed"**: Double-check your code signing identity and provisioning profile. Make sure they're correctly set up in your repo secrets.
+2. **Create a Certificate Signing Request (CSR)**:
+   - On your Mac, open Keychain Access (Applications > Utilities > Keychain Access).
+   - Go to Keychain Access > Certificate Assistant > Request a Certificate from a Certificate Authority.
+   - Fill in your email address and name, select "Saved to disk", and click Continue.
+   - Save the CSR file to your computer.
 
-- **"SwiftLint not found"**: If you're using a custom macOS runner, make sure SwiftLint is installed. The action tries to install it, but it might fail in some cases.
+3. **Create a Distribution Certificate**:
+   - Log in to your [Apple Developer account](https://developer.apple.com/).
+   - Navigate to Certificates, Identifiers & Profiles > Certificates.
+   - Click the '+' button to create a new certificate.
+   - Select "Mac App Distribution" and click Continue.
+   - Upload the CSR file you created earlier and click Continue.
+   - Download the certificate and double-click to install it in your Keychain.
 
-- **"DMG creation failed"**: Ensure you have the necessary permissions for the background image file if you're using a custom one.
+4. **Create an App ID**:
+   - In your Apple Developer account, go to Certificates, Identifiers & Profiles > Identifiers.
+   - Click the '+' button to create a new identifier.
+   - Select "App IDs" and click Continue.
+   - Choose "App" as the type and click Continue.
+   - Enter a description and your app's bundle ID (e.g., com.yourcompany.yourapp).
+   - Select the capabilities your app needs and click Continue, then Register.
 
-- **"Test scheme not found"**: Make sure your test scheme is shared in Xcode. Go to Manage Schemes and check the "Shared" box for your test scheme.
+5. **Create a Provisioning Profile**:
+   - Go to Certificates, Identifiers & Profiles > Profiles.
+   - Click the '+' button to create a new profile.
+   - Select "Mac App Store" under Distribution and click Continue.
+   - Select the App ID you created earlier and click Continue.
+   - Select the distribution certificate you created and click Continue.
+   - Enter a name for your profile and click Generate.
+   - Download the provisioning profile and double-click to install it.
 
-- **"Build failed due to code signing"**: If you're not distributing your app, try setting `CODE_SIGNING_REQUIRED=NO` in your build step.
+6. **Find Your Team ID**:
+   - In your Apple Developer account, go to Membership.
+   - Your Team ID is listed in the Membership Information section.
 
-- **"Permission denied when creating release"**: Ensure you've set the `permissions: contents: write` in your job configuration.
+Now that you have your certificates, provisioning profile, and Team ID, you can use them in your GitHub Actions workflow:
+
+```yaml
+- uses: hurbes/swift-app-pipeline-action@v0.0.15
+  with:
+    sign-app: 'true'
+    team-id: ${{ secrets.TEAM_ID }}
+```
+
+Make sure to add your Team ID as a secret in your GitHub repository settings.
+
+## 🔍 Debugging and Troubleshooting
+
+When working with code signing and Apple's certification process, you might encounter some issues. Here are some common problems and their solutions:
+
+### 1. "No provisioning profiles found"
+
+This error occurs when Xcode can't find a valid provisioning profile for your app.
+
+**Solution:**
+- Make sure you've created and downloaded the provisioning profile as described in the previous section.
+- Check that the provisioning profile is installed on your local machine.
+- Verify that the bundle identifier in your Xcode project matches the one in your provisioning profile.
+
+### 2. "Code Sign error: Code signing is required for product type 'Application' in SDK 'macOS'"
+
+This error appears when code signing is required but not properly configured.
+
+**Solution:**
+- In Xcode, go to your target's Build Settings.
+- Set "Code Signing Style" to "Manual".
+- Set "Development Team" to your team ID.
+- Set "Code Signing Identity" to "Mac App Distribution".
+- Set "Provisioning Profile" to the profile you created earlier.
+
+### 3. "Invalid code signing entitlements"
+
+This error occurs when your app's entitlements don't match those specified in your provisioning profile.
+
+**Solution:**
+- Review your app's entitlements in Xcode (Capabilities tab).
+- Make sure these entitlements match those in your provisioning profile.
+- If necessary, update your provisioning profile in the Apple Developer portal to include the required entitlements.
+
+### 4. "The operation couldn't be completed. (OSStatus error -67062.)"
+
+This cryptic error often means there's a problem with your signing certificate.
+
+**Solution:**
+- Check that your signing certificate is valid and not expired.
+- Try revoking your current certificate and creating a new one.
+- Make sure the certificate is properly installed in your Keychain.
+
+### 5. Debugging Code Signing in GitHub Actions
+
+When running this action in GitHub Actions, you might need more information to debug code signing issues. Here are some steps you can take:
+
+1. **Enable verbose output**: Add the following step before the Swift App Pipeline Action to get more detailed logs:
+
+   ```yaml
+   - name: Enable verbose output
+     run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+   ```
+
+2. **Check certificate and provisioning profile**: Add a step to list the available certificates and provisioning profiles:
+
+   ```yaml
+   - name: List certificates and provisioning profiles
+     run: |
+       security find-identity -v -p codesigning
+       ls -la ~/Library/M
 
 Still stuck? Feel free to open an issue. We're here to help! 🤗
 
@@ -310,5 +406,3 @@ Let's make this action awesome together! 🤝
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. Basically, use it however you want!
 
 ---
-
-Happy coding, and may your builds always be green! 🍀
