@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Preparing release..."
+echo "Archiving app..."
 
 # Get input variables
 PROJECT_NAME="${INPUT_PROJECT_NAME}"
@@ -10,13 +10,13 @@ CREATE_DMG="${INPUT_CREATE_DMG}"
 DMG_BACKGROUND="${INPUT_DMG_BACKGROUND}"
 BUILD_NUMBER="${BUILD_NUMBER}"
 
-# Set artifact name and path
-ARTIFACT_NAME="${APP_NAME}-${BUILD_NUMBER}"
+# Set paths
 APP_PATH="artifacts/${PROJECT_NAME}.app"
+ARCHIVE_NAME="${APP_NAME}-${BUILD_NUMBER}"
 
 if [ "${CREATE_DMG}" = "true" ]; then
     echo "Creating DMG..."
-    DMG_PATH="${ARTIFACT_NAME}.dmg"
+    DMG_PATH="artifacts/${ARCHIVE_NAME}.dmg"
 
     if [ -n "${DMG_BACKGROUND}" ]; then
         create-dmg \
@@ -38,16 +38,13 @@ if [ "${CREATE_DMG}" = "true" ]; then
             "${APP_PATH}"
     fi
 
-    ARTIFACT_PATH="${DMG_PATH}"
+    ARCHIVE_PATH="${DMG_PATH}"
 else
     echo "Creating ZIP..."
-    ZIP_PATH="${ARTIFACT_NAME}.zip"
+    ZIP_PATH="artifacts/${ARCHIVE_NAME}.zip"
     ditto -c -k --keepParent "${APP_PATH}" "${ZIP_PATH}"
-    ARTIFACT_PATH="${ZIP_PATH}"
+    ARCHIVE_PATH="${ZIP_PATH}"
 fi
 
-echo "artifact-path=${ARTIFACT_PATH}" >> $GITHUB_OUTPUT
-echo "release-name=${APP_NAME} v${BUILD_NUMBER}" >> $GITHUB_OUTPUT
-echo "release-tag=v${BUILD_NUMBER}" >> $GITHUB_OUTPUT
-
-echo "Release preparation completed."
+echo "archive-path=${ARCHIVE_PATH}" >> $GITHUB_OUTPUT
+echo "Archiving completed successfully."

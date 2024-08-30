@@ -4,23 +4,12 @@ set -e
 echo "Notarizing app..."
 
 # Get input variables
-PROJECT_NAME="${INPUT_PROJECT_NAME}"
-SCHEME_NAME="${INPUT_SCHEME_NAME}"
 KEYCHAIN_PROFILE="${INPUT_KEYCHAIN_PROFILE}"
 APPLE_ID="${INPUT_APPLE_ID}"
 APPLE_PASSWORD="${INPUT_APPLE_PASSWORD}"
 TEAM_ID="${INPUT_TEAM_ID}"
 STAPLE="${INPUT_STAPLE}"
-
-# Find the app bundle
-APP_PATH=$(find artifacts -name "*.app" -print -quit)
-
-if [ -z "$APP_PATH" ]; then
-    echo "Error: App bundle not found in artifacts directory"
-    exit 1
-fi
-
-echo "Found app bundle at: $APP_PATH"
+ARCHIVE_PATH="${INPUT_ARCHIVE_PATH}"
 
 # Create temporary keychain
 KEYCHAIN_PATH=$RUNNER_TEMP/notarization.keychain-db
@@ -34,7 +23,7 @@ xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" --apple-id "${APPLE_ID}
 
 # Submit app for notarization
 echo "Submitting app for notarization..."
-NOTARIZATION_OUTPUT=$(xcrun notarytool submit "${APP_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait)
+NOTARIZATION_OUTPUT=$(xcrun notarytool submit "${ARCHIVE_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait)
 
 echo "Notarization output:"
 echo "$NOTARIZATION_OUTPUT"
@@ -45,7 +34,7 @@ if echo "$NOTARIZATION_OUTPUT" | grep -q "status: Accepted"; then
     
     if [ "${STAPLE}" = "true" ]; then
         echo "Stapling app..."
-        if xcrun stapler staple "${APP_PATH}"; then
+        if xcrun stapler staple "${ARCHIVE_PATH}"; then
             echo "Stapling completed successfully."
         else
             echo "Warning: Stapling failed, but notarization was successful."

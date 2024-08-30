@@ -253,17 +253,27 @@ runs:
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
       run: ${{ github.action_path }}/scripts/sign.sh
 
+    - name: Archive App
+      shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_APP_NAME: ${{ inputs.app-name }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
+        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
+        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
+      id: archive
+      run: ${{ github.action_path }}/scripts/archive.sh
+
     - name: Notarize App
       if: inputs.enable-notarization == 'true' && inputs.sign-app == 'true'
       shell: bash
       env:
-        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
         INPUT_KEYCHAIN_PROFILE: ${{ inputs.keychain-profile }}
         INPUT_APPLE_ID: ${{ inputs.apple-id }}
         INPUT_APPLE_PASSWORD: ${{ inputs.apple-password }}
         INPUT_TEAM_ID: ${{ inputs.team-id }}
         INPUT_STAPLE: ${{ inputs.staple }}
+        INPUT_ARCHIVE_PATH: ${{ steps.archive.outputs.archive-path }}
       run: |
         if ! ${{ github.action_path }}/scripts/notarize.sh; then
           echo "::warning::Notarization failed. Check the logs for more information."
@@ -272,31 +282,20 @@ runs:
           fi
         fi
 
-    - name: Prepare Release
-      if: inputs.create-release == 'true'
-      id: prepare_release
-      shell: bash
-      env:
-        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_APP_NAME: ${{ inputs.app-name }}
-        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
-        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
-        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      run: ${{ github.action_path }}/scripts/release.sh
-
     - name: Create Release
       if: inputs.create-release == 'true'
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.prepare_release.outputs.artifact-path }}
-        name: ${{ steps.prepare_release.outputs.release-name }}
-        tag_name: ${{ steps.prepare_release.outputs.release-tag }}
+        files: ${{ steps.archive.outputs.archive-path }}
+        name: ${{ inputs.app-name }} v${{ steps.increment-version.outputs.build-number }}
+        tag_name: v${{ steps.increment-version.outputs.build-number }}
         body: "Automated release for ${{ inputs.app-name }} App"
         draft: false
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
+        
     - name: Comment on PR
       if: inputs.comment-on-pr == 'true'
       shell: bash
