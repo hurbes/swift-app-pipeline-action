@@ -15,6 +15,9 @@ inputs:
     description: 'Xcode version to use'
     required: false
     default: 'latest'
+  code-sign-identity:
+    description: 'Code signing identity to use'
+    required: false
   macos-version:
     description: 'macOS version to use'
     required: false

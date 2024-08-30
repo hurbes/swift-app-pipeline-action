@@ -35,11 +35,24 @@ if [ "${SIGN_APP}" = "true" ]; then
     echo "Code signing enabled for build"
     BUILD_FLAGS+=(CODE_SIGN_STYLE=Manual)
     BUILD_FLAGS+=(DEVELOPMENT_TEAM="${TEAM_ID}")
-    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="3rd Party Mac Developer Application")
+    
+    if [ -n "${INPUT_CODE_SIGN_IDENTITY}" ]; then
+        CODE_SIGN_IDENTITY="${INPUT_CODE_SIGN_IDENTITY}"
+    else
+        # Extract the first available signing identity
+        CODE_SIGN_IDENTITY=$(security find-identity -v -p codesigning | grep -m 1 '"' | sed -n 's/.*"\(.*\)".*/\1/p')
+    fi
+    
+    if [ -z "${CODE_SIGN_IDENTITY}" ]; then
+        echo "Error: No code signing identity found"
+        exit 1
+    fi
+    
+    echo "Using code signing identity: ${CODE_SIGN_IDENTITY}"
+    BUILD_FLAGS+=(CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}")
+    
     if [ -n "${PROVISIONING_PROFILE_SPECIFIER}" ]; then
         BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROVISIONING_PROFILE_SPECIFIER}")
-    else
-        BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="***")
     fi
 else
     echo "Code signing disabled for build"
