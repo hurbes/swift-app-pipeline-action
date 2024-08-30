@@ -38,15 +38,33 @@ ditto -c -k --keepParent "${APP_PATH}" "${ZIP_PATH}"
 
 # Submit app for notarization
 echo "Submitting app for notarization..."
-xcrun notarytool submit "${ZIP_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait
+NOTARIZATION_OUTPUT=$(xcrun notarytool submit "${ZIP_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait)
 
-if [ "${STAPLE}" = "true" ]; then
-    echo "Stapling app..."
-    xcrun stapler staple "${APP_PATH}"
+echo "Notarization output:"
+echo "$NOTARIZATION_OUTPUT"
+
+# Check if notarization was successful
+if echo "$NOTARIZATION_OUTPUT" | grep -q "status: Accepted"; then
+    echo "Notarization successful!"
+    
+    if [ "${STAPLE}" = "true" ]; then
+        echo "Stapling app..."
+        if xcrun stapler staple "${APP_PATH}"; then
+            echo "Stapling completed successfully."
+        else
+            echo "Warning: Stapling failed, but notarization was successful."
+            echo "You may need to manually staple the app or distribute it with the notarization ticket."
+        fi
+    fi
+else
+    echo "Error: Notarization failed."
+    echo "Please check the notarization output above for more details."
+    echo "You may need to address code signing issues or other requirements from Apple."
+    exit 1
 fi
 
 # Cleanup
 security delete-keychain ${KEYCHAIN_PATH}
 rm "${ZIP_PATH}"
 
-echo "Notarization completed successfully."
+echo "Notarization process completed."
