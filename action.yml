@@ -253,7 +253,8 @@ runs:
       if: inputs.enable-notarization == 'true' && inputs.sign-app == 'true'
       shell: bash
       env:
-        INPUT_APP_PATH: artifacts/${{ inputs.app-name }}.app
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
         INPUT_KEYCHAIN_PROFILE: ${{ inputs.keychain-profile }}
         INPUT_APPLE_ID: ${{ inputs.apple-id }}
         INPUT_APPLE_PASSWORD: ${{ inputs.apple-password }}
