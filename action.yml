@@ -109,6 +109,25 @@ inputs:
   github-token:
     description: 'GitHub token for creating releases and commenting on PRs'
     required: true
+  enable-notarization:
+    description: 'Whether to notarize the app'
+    required: false
+    default: 'false'
+  apple-id:
+    description: 'Apple ID for notarization'
+    required: false
+  apple-password:
+    description: 'App-specific password for Apple ID'
+    required: false
+  keychain-profile:
+    description: 'Keychain profile for notarization'
+    required: false
+    default: 'notary'
+  staple:
+    description: 'Whether to staple the notarization ticket to the app'
+    required: false
+    default: 'true'
+
 outputs:
   build-number:
     description: 'The build number used for this run'
@@ -229,6 +248,18 @@ runs:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
       run: ${{ github.action_path }}/scripts/sign.sh
+
+    - name: Notarize App
+      if: inputs.enable-notarization == 'true' && inputs.sign-app == 'true'
+      shell: bash
+      env:
+        INPUT_APP_PATH: artifacts/${{ inputs.app-name }}.app
+        INPUT_KEYCHAIN_PROFILE: ${{ inputs.keychain-profile }}
+        INPUT_APPLE_ID: ${{ inputs.apple-id }}
+        INPUT_APPLE_PASSWORD: ${{ inputs.apple-password }}
+        INPUT_TEAM_ID: ${{ inputs.team-id }}
+        INPUT_STAPLE: ${{ inputs.staple }}
+      run: ${{ github.action_path }}/scripts/notarize.sh
       
     - name: Create DMG
       if: inputs.create-dmg == 'true'
