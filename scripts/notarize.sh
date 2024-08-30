@@ -32,13 +32,9 @@ security unlock-keychain -p "${KEYCHAIN_PASS}" ${KEYCHAIN_PATH}
 # Store notarization credentials
 xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" --apple-id "${APPLE_ID}" --password "${APPLE_PASSWORD}" --team-id "${TEAM_ID}" --keychain "${KEYCHAIN_PATH}"
 
-# Create a ZIP archive of the app bundle
-ZIP_PATH="${APP_PATH}.zip"
-ditto -c -k --keepParent "${APP_PATH}" "${ZIP_PATH}"
-
 # Submit app for notarization
 echo "Submitting app for notarization..."
-NOTARIZATION_OUTPUT=$(xcrun notarytool submit "${ZIP_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait)
+NOTARIZATION_OUTPUT=$(xcrun notarytool submit "${APP_PATH}" --keychain-profile "${KEYCHAIN_PROFILE}" --keychain "${KEYCHAIN_PATH}" --wait)
 
 echo "Notarization output:"
 echo "$NOTARIZATION_OUTPUT"
@@ -65,6 +61,5 @@ fi
 
 # Cleanup
 security delete-keychain ${KEYCHAIN_PATH}
-rm "${ZIP_PATH}"
 
 echo "Notarization process completed."

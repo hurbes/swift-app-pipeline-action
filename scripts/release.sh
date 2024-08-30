@@ -17,7 +17,7 @@ APP_PATH="artifacts/${PROJECT_NAME}.app"
 if [ "${CREATE_DMG}" = "true" ]; then
     echo "Creating DMG..."
     DMG_PATH="${ARTIFACT_NAME}.dmg"
-    
+
     if [ -n "${DMG_BACKGROUND}" ]; then
         create-dmg \
             --volname "${APP_NAME}" \
@@ -37,7 +37,7 @@ if [ "${CREATE_DMG}" = "true" ]; then
             "${DMG_PATH}" \
             "${APP_PATH}"
     fi
-    
+
     ARTIFACT_PATH="${DMG_PATH}"
 else
     echo "Creating ZIP..."

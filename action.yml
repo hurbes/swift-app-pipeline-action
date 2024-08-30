@@ -271,19 +271,6 @@ runs:
             exit 1
           fi
         fi
-      
-    - name: Create DMG
-      if: inputs.create-dmg == 'true'
-      shell: bash
-      env:
-        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
-        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
-        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
-        INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
-        INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
-        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      run: ${{ github.action_path }}/scripts/create-dmg.sh
 
     - name: Prepare Release
       if: inputs.create-release == 'true'
