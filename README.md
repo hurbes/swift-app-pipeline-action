@@ -378,6 +378,20 @@ If you encounter issues with building, signing, or notarizing your app, here are
 
 If you're still encountering issues, feel free to open an issue in this repository with detailed logs and a description of the problem.
 
+## 📝 TODO
+
+We're constantly working to improve this action. Here are some features and improvements we're planning to add:
+
+- [ ] Test and refine the PR commenting feature
+- [ ] Add support for TestFlight uploads
+- [ ] Implement App Store upload functionality
+- [ ] Extend support to iOS applications
+- [ ] Improve error handling and provide more detailed error messages
+- [ ] Add support for custom build configurations
+- [ ] Implement caching mechanisms to speed up builds
+- [ ] Create detailed documentation for each step of the pipeline
+- [ ] Add support for running custom scripts at various stages of the pipeline
+
 
 ## 🙏 Credits
 
