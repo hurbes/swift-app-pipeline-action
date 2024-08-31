@@ -93,9 +93,6 @@ This action is more customizable than your favorite ice cream sundae. Here are a
     dmg-background: ''
     dmg-window-size: '600x400'
     dmg-icon-size: '128'
-    code-signing-identity: ''
-    provisioning-profile: ''
-    team-id: ''
     enable-notarization: 'false'
     apple-id: ''
     apple-password: ''
@@ -267,55 +264,39 @@ Remember, you can mix and match these steps however you like. Use only what you 
 
 ## 🍎 Apple Developer Certificates and Provisioning Profiles
 
-To sign and distribute your macOS app, you'll need an Apple Developer account and the necessary certificates and provisioning profiles. Here's a step-by-step guide to set these up:
+To sign and notarize your macOS app, you'll need specific certificates and profiles:
 
-1. **Enroll in the Apple Developer Program**: If you haven't already, enroll in the [Apple Developer Program](https://developer.apple.com/programs/). This is required for code signing and distribution.
+1. **Developer ID Application Certificate**: This is required for signing apps that will be distributed outside the Mac App Store. To create one:
+   - Open Xcode and go to Xcode > Preferences > Accounts
+   - Select your Apple ID and click "Manage Certificates"
+   - Click the "+" button and choose "Developer ID Application"
 
-2. **Create a Certificate Signing Request (CSR)**:
-   - On your Mac, open Keychain Access (Applications > Utilities > Keychain Access).
-   - Go to Keychain Access > Certificate Assistant > Request a Certificate from a Certificate Authority.
-   - Fill in your email address and name, select "Saved to disk", and click Continue.
-   - Save the CSR file to your computer.
+2. **Mac Provisioning Profile**: This links your app's bundle ID with your Developer ID Application certificate. To create one:
+   - Go to the [Apple Developer Portal](https://developer.apple.com/account/resources/profiles/list)
+   - Click the "+" button to create a new profile
+   - Choose "Mac" as the platform and "Developer ID" as the distribution method
+   - Select your app's App ID and the Developer ID Application certificate
+   - Download and double-click the profile to install it
 
-3. **Create a Distribution Certificate**:
-   - Log in to your [Apple Developer account](https://developer.apple.com/).
-   - Navigate to Certificates, Identifiers & Profiles > Certificates.
-   - Click the '+' button to create a new certificate.
-   - Select "Mac App Distribution" and click Continue.
-   - Upload the CSR file you created earlier and click Continue.
-   - Download the certificate and double-click to install it in your Keychain.
+3. **App-Specific Password**: Required for notarization. To generate one:
+   - Go to [appleid.apple.com](https://appleid.apple.com/) and sign in
+   - In the Security section, click "Generate Password" under App-Specific Passwords
+   - Give your password a label (e.g., "GitHub Actions Notarization") and click Create
 
-4. **Create an App ID**:
-   - In your Apple Developer account, go to Certificates, Identifiers & Profiles > Identifiers.
-   - Click the '+' button to create a new identifier.
-   - Select "App IDs" and click Continue.
-   - Choose "App" as the type and click Continue.
-   - Enter a description and your app's bundle ID (e.g., com.yourcompany.yourapp).
-   - Select the capabilities your app needs and click Continue, then Register.
-
-5. **Create a Provisioning Profile**:
-   - Go to Certificates, Identifiers & Profiles > Profiles.
-   - Click the '+' button to create a new profile.
-   - Select "Mac App Store" under Distribution and click Continue.
-   - Select the App ID you created earlier and click Continue.
-   - Select the distribution certificate you created and click Continue.
-   - Enter a name for your profile and click Generate.
-   - Download the provisioning profile and double-click to install it.
-
-6. **Find Your Team ID**:
-   - In your Apple Developer account, go to Membership.
-   - Your Team ID is listed in the Membership Information section.
-
-Now that you have your certificates, provisioning profile, and Team ID, you can use them in your GitHub Actions workflow:
+After setting these up, use them in your GitHub Actions workflow:
 
 ```yaml
-- uses: hurbes/swift-app-pipeline-action@v0.0.15
+- uses: hurbes/swift-app-pipeline-action@v0.0.17
   with:
     sign-app: 'true'
+    enable-notarization: 'true'
+    developer-id-application: 'Developer ID Application: Your Name (TEAM_ID)'
     team-id: ${{ secrets.TEAM_ID }}
+    apple-id: ${{ secrets.APPLE_ID }}
+    apple-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
 ```
 
-Make sure to add your Team ID as a secret in your GitHub repository settings.
+Make sure to add your Team ID, Apple ID, and app-specific password as secrets in your GitHub repository settings.
 
 ### 9. Notarization 🔐
 
@@ -361,67 +342,42 @@ Make sure to add your Team ID, Apple ID, and app-specific password as secrets in
 
 
 ## 🔍 Debugging and Troubleshooting
+If you encounter issues with building, signing, or notarizing your app, here are some steps to help diagnose the problem:
 
-When working with code signing and Apple's certification process, you might encounter some issues. Here are some common problems and their solutions:
-
-### 1. "No provisioning profiles found"
-
-This error occurs when Xcode can't find a valid provisioning profile for your app.
-
-**Solution:**
-- Make sure you've created and downloaded the provisioning profile as described in the previous section.
-- Check that the provisioning profile is installed on your local machine.
-- Verify that the bundle identifier in your Xcode project matches the one in your provisioning profile.
-
-### 2. "Code Sign error: Code signing is required for product type 'Application' in SDK 'macOS'"
-
-This error appears when code signing is required but not properly configured.
-
-**Solution:**
-- In Xcode, go to your target's Build Settings.
-- Set "Code Signing Style" to "Manual".
-- Set "Development Team" to your team ID.
-- Set "Code Signing Identity" to "Mac App Distribution".
-- Set "Provisioning Profile" to the profile you created earlier.
-
-### 3. "Invalid code signing entitlements"
-
-This error occurs when your app's entitlements don't match those specified in your provisioning profile.
-
-**Solution:**
-- Review your app's entitlements in Xcode (Capabilities tab).
-- Make sure these entitlements match those in your provisioning profile.
-- If necessary, update your provisioning profile in the Apple Developer portal to include the required entitlements.
-
-### 4. "The operation couldn't be completed. (OSStatus error -67062.)"
-
-This cryptic error often means there's a problem with your signing certificate.
-
-**Solution:**
-- Check that your signing certificate is valid and not expired.
-- Try revoking your current certificate and creating a new one.
-- Make sure the certificate is properly installed in your Keychain.
-
-### 5. Debugging Code Signing in GitHub Actions
-
-When running this action in GitHub Actions, you might need more information to debug code signing issues. Here are some steps you can take:
-
-1. **Enable verbose output**: Add the following step before the Swift App Pipeline Action to get more detailed logs:
-
-   ```yaml
-   - name: Enable verbose output
-     run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+1. **Check Code Signing**:
+   ```bash
+   codesign -dv --verbose=4 /path/to/YourApp.app
    ```
+   This will display detailed information about the app's signature.
 
-2. **Check certificate and provisioning profile**: Add a step to list the available certificates and provisioning profiles:
+2. **Verify Entitlements**:
+   ```bash
+   codesign -d --entitlements :- /path/to/YourApp.app
+   ```
+   This shows the entitlements embedded in your app.
 
-   ```yaml
-   - name: List certificates and provisioning profiles
-     run: |
-       security find-identity -v -p codesigning
-       ls -la ~/Library/M
+3. **Test App Launch**:
+   ```bash
+   spctl -a -vv /path/to/YourApp.app
+   ```
+   This checks if your app would be allowed to run on macOS.
 
-Still stuck? Feel free to open an issue. We're here to help! 🤗
+4. **Notarization Log**:
+   If notarization fails, check the detailed log provided in the GitHub Actions output. Look for specific error messages and refer to the provided Apple documentation links for solutions.
+
+5. **Common Notarization Issues**:
+   - Ensure you're using a "Developer ID Application" certificate, not a regular development certificate.
+   - Verify that your provisioning profile is for "Mac" and "Developer ID" distribution.
+   - Check that all executable code in your app is properly signed.
+   - Make sure your app is built with the Hardened Runtime enabled.
+   - If your app is not sandboxed, you may need to request an exception from Apple.
+
+6. **GitHub Actions Environment**:
+   - Make sure all required secrets (TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD) are properly set in your repository settings.
+   - Verify that the Xcode version specified in your workflow is compatible with your project.
+
+If you're still encountering issues, feel free to open an issue in this repository with detailed logs and a description of the problem.
+
 
 ## 🙏 Credits
 
