@@ -109,6 +109,29 @@ inputs:
   github-token:
     description: 'GitHub token for creating releases and commenting on PRs'
     required: true
+  enable-notarization:
+    description: 'Whether to notarize the app'
+    required: false
+    default: 'false'
+  apple-id:
+    description: 'Apple ID for notarization'
+    required: false
+  apple-password:
+    description: 'App-specific password for Apple ID'
+    required: false
+  keychain-profile:
+    description: 'Keychain profile for notarization'
+    required: false
+    default: 'notary'
+  staple:
+    description: 'Whether to staple the notarization ticket to the app'
+    required: false
+    default: 'true'
+  ignore-notarization-failure:
+    description: 'Whether to continue the pipeline if notarization fails'
+    required: false
+    default: 'false'
+
 outputs:
   build-number:
     description: 'The build number used for this run'
@@ -229,23 +252,8 @@ runs:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
       run: ${{ github.action_path }}/scripts/sign.sh
-      
-    - name: Create DMG
-      if: inputs.create-dmg == 'true'
-      shell: bash
-      env:
-        INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
-        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
-        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
-        INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
-        INPUT_DMG_WINDOW_SIZE: ${{ inputs.dmg-window-size }}
-        INPUT_DMG_ICON_SIZE: ${{ inputs.dmg-icon-size }}
-        BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      run: ${{ github.action_path }}/scripts/create-dmg.sh
 
-    - name: Prepare Release
-      if: inputs.create-release == 'true'
-      id: prepare_release
+    - name: Archive App
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
@@ -253,21 +261,41 @@ runs:
         INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_DMG_BACKGROUND: ${{ inputs.dmg-background }}
         BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
-      run: ${{ github.action_path }}/scripts/release.sh
+      id: archive
+      run: ${{ github.action_path }}/scripts/archive.sh
+
+    - name: Notarize App
+      if: inputs.enable-notarization == 'true' && inputs.sign-app == 'true'
+      shell: bash
+      env:
+        INPUT_KEYCHAIN_PROFILE: ${{ inputs.keychain-profile }}
+        INPUT_APPLE_ID: ${{ inputs.apple-id }}
+        INPUT_APPLE_PASSWORD: ${{ inputs.apple-password }}
+        INPUT_TEAM_ID: ${{ inputs.team-id }}
+        INPUT_STAPLE: ${{ inputs.staple }}
+        INPUT_ARCHIVE_PATH: ${{ steps.archive.outputs.archive-path }}
+      run: |
+        if ! ${{ github.action_path }}/scripts/notarize.sh; then
+          echo "::warning::Notarization failed. Check the logs for more information."
+          if [[ "${{ inputs.ignore-notarization-failure }}" != "true" ]]; then
+            exit 1
+          fi
+        fi
 
     - name: Create Release
       if: inputs.create-release == 'true'
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.prepare_release.outputs.artifact-path }}
-        name: ${{ steps.prepare_release.outputs.release-name }}
-        tag_name: ${{ steps.prepare_release.outputs.release-tag }}
+        files: ${{ steps.archive.outputs.archive-path }}
+        name: ${{ inputs.app-name }} v${{ steps.increment-version.outputs.build-number }}
+        tag_name: v${{ steps.increment-version.outputs.build-number }}
         body: "Automated release for ${{ inputs.app-name }} App"
         draft: false
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
+        
     - name: Comment on PR
       if: inputs.comment-on-pr == 'true'
       shell: bash

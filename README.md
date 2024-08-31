@@ -96,6 +96,11 @@ This action is more customizable than your favorite ice cream sundae. Here are a
     code-signing-identity: ''
     provisioning-profile: ''
     team-id: ''
+    enable-notarization: 'false'
+    apple-id: ''
+    apple-password: ''
+    keychain-profile: 'notary'
+    staple: 'true'
 ```
 
 ## 🧠 The Nitty-Gritty Details
@@ -311,6 +316,49 @@ Now that you have your certificates, provisioning profile, and Team ID, you can 
 ```
 
 Make sure to add your Team ID as a secret in your GitHub repository settings.
+
+### 9. Notarization 🔐
+
+Notarizes your app with Apple's notary service, ensuring it can be run on macOS without security warnings.
+
+**Usage:**
+```yaml
+- uses: hurbes/swift-app-pipeline-action@v0.0.16
+  with:
+    sign-app: 'true'
+    enable-notarization: 'true'
+    apple-id: ${{ secrets.APPLE_ID }}
+    apple-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+    team-id: ${{ secrets.TEAM_ID }}
+```
+
+**What it does:**
+- Submits your app to Apple's notary service
+- Waits for the notarization to complete
+- Optionally staples the notarization ticket to your app
+
+**Pro tip:** Create an app-specific password for your Apple ID to use in this action for enhanced security.
+
+10. **Create an App-Specific Password for Notarization**:
+   - Go to [appleid.apple.com](https://appleid.apple.com/) and sign in.
+   - In the Security section, click "Generate Password" under App-Specific Passwords.
+   - Give your password a label (e.g., "GitHub Actions Notarization") and click Create.
+   - Save this password securely - you'll need it for the `apple-password` input in the action.
+
+Now that you have your certificates, provisioning profile, Team ID, and app-specific password, you can use them in your GitHub Actions workflow:
+
+```yaml
+- uses: hurbes/swift-app-pipeline-action@v0.0.16
+  with:
+    sign-app: 'true'
+    enable-notarization: 'true'
+    team-id: ${{ secrets.TEAM_ID }}
+    apple-id: ${{ secrets.APPLE_ID }}
+    apple-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+```
+
+Make sure to add your Team ID, Apple ID, and app-specific password as secrets in your GitHub repository settings.
+
 
 ## 🔍 Debugging and Troubleshooting
 
