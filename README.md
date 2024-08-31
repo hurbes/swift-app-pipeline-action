@@ -383,6 +383,8 @@ If you're still encountering issues, feel free to open an issue in this reposito
 We're constantly working to improve this action. Here are some features and improvements we're planning to add:
 
 - [ ] Test and refine the PR commenting feature
+- [ ] Test and refine the DMG archiving feature
+- [ ] Add [Sparkle](https://sparkle-project.org/) Upader support
 - [ ] Add support for TestFlight uploads
 - [ ] Implement App Store upload functionality
 - [ ] Extend support to iOS applications
@@ -391,6 +393,7 @@ We're constantly working to improve this action. Here are some features and impr
 - [ ] Implement caching mechanisms to speed up builds
 - [ ] Create detailed documentation for each step of the pipeline
 - [ ] Add support for running custom scripts at various stages of the pipeline
+- [ ] Maybe switch to typescript for better maintainability and expansion support
 
 
 ## 🙏 Credits
