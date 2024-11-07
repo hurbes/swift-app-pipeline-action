@@ -181,11 +181,13 @@ runs:
         security cms -D -i $PP_PATH
 
     - name: Verify Certificate
+      if: inputs.sign-app == 'true'
       shell: bash
       run: |
         security find-identity -v -p codesigning
 
     - name: Examine Provisioning Profile
+      if: inputs.sign-app == 'true'
       shell: bash
       run: |
         security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
