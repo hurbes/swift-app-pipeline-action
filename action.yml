@@ -194,8 +194,11 @@ runs:
 
     - name: Examine Xcode Project
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
       run: |
-        xcodebuild -project Closer.xcodeproj -scheme closer -showBuildSettings
+        xcodebuild -project $INPUT_PROJECT_NAME.xcodeproj -scheme $INPUT_SCHEME_NAME -showBuildSettings
         
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
