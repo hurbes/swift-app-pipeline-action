@@ -54,15 +54,15 @@ if [ "${SIGN_APP}" = "true" ]; then
     if [ -n "${PROVISIONING_PROFILE_SPECIFIER}" ]; then
         BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROVISIONING_PROFILE_SPECIFIER}")
     fi
+
+    security find-identity -v -p codesigning
+    ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
     BUILD_FLAGS+=(CODE_SIGNING_REQUIRED=NO)
     BUILD_FLAGS+=(CODE_SIGNING_ALLOWED=NO)
 fi
-
-security find-identity -v -p codesigning
-ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
