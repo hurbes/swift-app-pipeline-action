@@ -17,7 +17,7 @@ APP_NAME="${INPUT_APP_NAME}"
 PR_COMMENT_TEMPLATE="${INPUT_PR_COMMENT_TEMPLATE:-New build available: {release-url}}"
 
 # Check required variables
-if [ -z "$GITHUB_TOKEN" ] || [ -z "$ARTIFACT_PATH" ] || [ -z "$BUILD_NUMBER" ] || [ -z "$APP_NAME" ]; then
+if [ -z "$GITHUB_TOKEN" ] || [ -z "$BUILD_NUMBER" ] || [ -z "$APP_NAME" ]; then
     echo "Error: Missing required input variables"
     exit 1
 fi
