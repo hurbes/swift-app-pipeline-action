@@ -25,14 +25,27 @@ fi
 # Get PR number
 PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
 
-# Get latest release URL
-RELEASE_URL=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+# Set default values for ARTIFACT_NAME and ARTIFACT_SIZE.
+ARTIFACT_NAME=""
+ARTIFACT_SIZE=""
+
+# Check if INPUT_CREATE_DMG is set to true
+if [ -n "$INPUT_CREATE_DMG" ] && [ "$INPUT_CREATE_DMG" = "true" ]; then
+    # Check required variables
+    if [ -z "$ARTIFACT_PATH" ]; then
+        echo "Error: Missing required input variables"
+        exit 1
+    fi
+
+    # Get latest release URL
+    RELEASE_URL=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
     "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest" | \
     jq -r '.html_url')
 
-# Get artifact details
-ARTIFACT_NAME=$(basename "$ARTIFACT_PATH")
-ARTIFACT_SIZE=$(du -sh "$ARTIFACT_PATH" | cut -f1)
+    # Get artifact details
+    ARTIFACT_NAME=$(basename "$ARTIFACT_PATH")
+    ARTIFACT_SIZE=$(du -sh "$ARTIFACT_PATH" | cut -f1)
+fi
 
 # Prepare comment body
 COMMENT_BODY=$(echo "$PR_COMMENT_TEMPLATE" | \

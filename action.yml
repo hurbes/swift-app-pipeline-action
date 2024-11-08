@@ -307,6 +307,7 @@ runs:
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_ARTIFACT_PATH: ${{ steps.create-release.outputs.artifact-path }}
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}
