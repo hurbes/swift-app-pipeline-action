@@ -181,19 +181,24 @@ runs:
         security cms -D -i $PP_PATH
 
     - name: Verify Certificate
+      if: inputs.sign-app == 'true'
       shell: bash
       run: |
         security find-identity -v -p codesigning
 
     - name: Examine Provisioning Profile
+      if: inputs.sign-app == 'true'
       shell: bash
       run: |
         security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
 
     - name: Examine Xcode Project
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_SCHEME_NAME: ${{ inputs.scheme-name }}
       run: |
-        xcodebuild -project Closer.xcodeproj -scheme closer -showBuildSettings
+        xcodebuild -project $INPUT_PROJECT_NAME.xcodeproj -scheme $INPUT_SCHEME_NAME -showBuildSettings
         
     - name: Run SwiftLint
       if: inputs.run-lint == 'true'
@@ -302,6 +307,7 @@ runs:
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_COMMENT_ON_PR: ${{ inputs.comment-on-pr }}
+        INPUT_CREATE_DMG: ${{ inputs.create-dmg }}
         INPUT_ARTIFACT_PATH: ${{ steps.create-release.outputs.artifact-path }}
         INPUT_BUILD_NUMBER: ${{ steps.increment-version.outputs.build-number }}
         INPUT_APP_NAME: ${{ inputs.app-name != '' && inputs.app-name || inputs.project-name }}

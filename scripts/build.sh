@@ -26,6 +26,7 @@ BUILD_FLAGS=()
 BUILD_FLAGS+=(-project "${PROJECT_NAME}.xcodeproj")
 BUILD_FLAGS+=(-scheme "${SCHEME_NAME}")
 BUILD_FLAGS+=(-configuration Release)
+BUILD_FLAGS+=(-skipMacroValidation)
 BUILD_FLAGS+=(-derivedDataPath "./build")
 BUILD_FLAGS+=(ONLY_ACTIVE_ARCH=NO)
 BUILD_FLAGS+=(LIBRARY_VALIDATION=NO)
@@ -54,15 +55,15 @@ if [ "${SIGN_APP}" = "true" ]; then
     if [ -n "${PROVISIONING_PROFILE_SPECIFIER}" ]; then
         BUILD_FLAGS+=(PROVISIONING_PROFILE_SPECIFIER="${PROVISIONING_PROFILE_SPECIFIER}")
     fi
+
+    security find-identity -v -p codesigning
+    ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 else
     echo "Code signing disabled for build"
     BUILD_FLAGS+=(CODE_SIGN_IDENTITY=-)
     BUILD_FLAGS+=(CODE_SIGNING_REQUIRED=NO)
     BUILD_FLAGS+=(CODE_SIGNING_ALLOWED=NO)
 fi
-
-security find-identity -v -p codesigning
-ls -l ~/Library/MobileDevice/Provisioning\ Profiles/
 
 if [ "${REMOVE_QUARANTINE}" = "true" ]; then
     echo "Adding REMOVE_QUARANTINE flag"
